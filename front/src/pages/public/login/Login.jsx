@@ -3,21 +3,21 @@ import { useState } from 'react'
 import './login.css'
 
 function Login() {
-  const [email, setEmail] = useState('')
+  const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
 
   function handleLogin(e) {
     e.preventDefault()
 
-    if (!email || !password) {
-      alert('Preencha e-mail e senha.')
+    if (!user || !password) {
+      alert('Preencha usuário e senha.')
       return
     }
 
-    // 🔐 Criar cookie compartilhado entre subdomínios
-    document.cookie = "pc_auth=true; domain=.plugconversa.com.br; path=/; Secure"
+    // 🔐 Cookie compartilhado entre subdomínios
+    document.cookie = 'pc_auth=true; domain=.plugconversa.com.br; path=/; Secure; SameSite=Lax'
 
-    // 🚀 Redirecionar
+    // 🚀 Redirecionar para subdomínio
     window.location.href = 'https://app.plugconversa.com.br'
   }
 
@@ -28,10 +28,10 @@ function Login() {
 
         <form className="login-form" onSubmit={handleLogin}>
           <input
-            type="email"
-            placeholder="E-mail"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            type="text"
+            placeholder="Usuário ou e-mail"
+            value={user}
+            onChange={(e) => setUser(e.target.value)}
           />
 
           <input
