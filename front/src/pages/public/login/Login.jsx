@@ -1,10 +1,23 @@
 // caminho: front/src/pages/public/login/Login.jsx
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import './login.css'
+
+function getCookie(name) {
+  const value = `; ${document.cookie}`
+  const parts = value.split(`; ${name}=`)
+  if (parts.length === 2) return parts.pop().split(';').shift()
+}
 
 function Login() {
   const [user, setUser] = useState('')
   const [password, setPassword] = useState('')
+
+  useEffect(() => {
+    const isAuth = getCookie('pc_auth')
+    if (isAuth) {
+      window.location.href = 'https://app.plugconversa.com.br/app'
+    }
+  }, [])
 
   function handleLogin(e) {
     e.preventDefault()
@@ -15,9 +28,10 @@ function Login() {
     }
 
     // 🔐 Cookie compartilhado entre subdomínios
-    document.cookie = 'pc_auth=true; domain=.plugconversa.com.br; path=/; Secure; SameSite=Lax'
+    document.cookie =
+      'pc_auth=true; domain=.plugconversa.com.br; path=/; Secure; SameSite=Lax'
 
-    // 🚀 Redirecionar para subdomínio
+    // 🚀 Redirecionar direto para o Dashboard
     window.location.href = 'https://app.plugconversa.com.br/app'
   }
 
