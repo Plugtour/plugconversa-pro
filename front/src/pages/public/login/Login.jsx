@@ -18,7 +18,7 @@ function Login() {
     document.cookie = 'pc_auth=true; domain=.plugconversa.com.br; path=/; Secure; SameSite=Lax'
 
     // 🚀 Redirecionar para subdomínio
-    window.location.href = 'https://app.plugconversa.com.br'
+    window.location.href = 'https://app.plugconversa.com.br/app'
   }
 
   return (
