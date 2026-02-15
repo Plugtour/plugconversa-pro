@@ -10,6 +10,12 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(';').shift()
 }
 
+function clearAuthCookie() {
+  // remove em todos os subdomínios
+  document.cookie =
+    'pc_auth=; domain=.plugconversa.com.br; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax'
+}
+
 export default function AppShell({ kind = 'client' }) {
   useEffect(() => {
     const isAuth = getCookie('pc_auth')
@@ -18,6 +24,13 @@ export default function AppShell({ kind = 'client' }) {
       window.location.href = 'https://plugconversa.com.br/login'
     }
   }, [])
+
+  function onLogout() {
+    clearAuthCookie()
+    window.location.href = 'https://plugconversa.com.br/login'
+  }
+
+  const isAppHost = window.location.hostname.startsWith('app.')
 
   return (
     <div className="pcLayout">
@@ -34,6 +47,12 @@ export default function AppShell({ kind = 'client' }) {
           <div className="pcTopbarRight">
             <div className="pcTopbarUser">
               <div className="pcTopbarAvatar">PC</div>
+
+              {isAppHost && (
+                <button type="button" className="pcTopbarLogout" onClick={onLogout}>
+                  Sair
+                </button>
+              )}
             </div>
           </div>
         </header>
