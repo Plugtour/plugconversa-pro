@@ -17,20 +17,21 @@ function clearAuthCookie() {
 }
 
 export default function AppShell({ kind = 'client' }) {
-  useEffect(() => {
-    const isAuth = getCookie('pc_auth')
+  const isAppHost = window.location.hostname.startsWith('app.')
 
-    if (window.location.hostname.startsWith('app.') && !isAuth) {
+  useEffect(() => {
+    const isAuth = !!getCookie('pc_auth')
+
+    // 🔒 se estiver no subdomínio e não estiver logado -> volta pro login do domínio principal
+    if (isAppHost && !isAuth) {
       window.location.href = 'https://plugconversa.com.br/login'
     }
-  }, [])
+  }, [isAppHost])
 
   function onLogout() {
     clearAuthCookie()
     window.location.href = 'https://plugconversa.com.br/login'
   }
-
-  const isAppHost = window.location.hostname.startsWith('app.')
 
   return (
     <div className="pcLayout">
@@ -49,7 +50,11 @@ export default function AppShell({ kind = 'client' }) {
               <div className="pcTopbarAvatar">PC</div>
 
               {isAppHost && (
-                <button type="button" className="pcTopbarLogout" onClick={onLogout}>
+                <button
+                  type="button"
+                  className="pcTopbarLogout"
+                  onClick={onLogout}
+                >
                   Sair
                 </button>
               )}

@@ -15,7 +15,7 @@ function Login() {
   useEffect(() => {
     const isAuth = getCookie('pc_auth')
     if (isAuth) {
-      window.location.href = 'https://app.plugconversa.com.br/app'
+      window.location.href = 'https://app.plugconversa.com.br/dashboard'
     }
   }, [])
 
@@ -32,7 +32,7 @@ function Login() {
       'pc_auth=true; domain=.plugconversa.com.br; path=/; Secure; SameSite=Lax'
 
     // 🚀 Redirecionar direto para o Dashboard
-    window.location.href = 'https://app.plugconversa.com.br/app'
+    window.location.href = 'https://app.plugconversa.com.br/dashboard'
   }
 
   return (

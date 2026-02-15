@@ -32,24 +32,16 @@ function isAppHost() {
 
 function RequireAuth({ children }) {
   const authed = !!getCookie('pc_auth')
-  if (!authed) return <Navigate to="/login" replace />
 
-  // 🔒 Força área logada a rodar apenas no subdomínio app.
-  if (!isAppHost()) {
-    window.location.href = 'https://app.plugconversa.com.br/app'
+  // 🔒 se não estiver logado, manda sempre pro login do domínio principal
+  if (!authed) {
+    window.location.href = 'https://plugconversa.com.br/login'
     return null
   }
 
-  return children
-}
-
-function RequireAdminHost({ children }) {
-  const authed = !!getCookie('pc_auth')
-  if (!authed) return <Navigate to="/login" replace />
-
-  // 🔒 Admin também apenas no subdomínio
+  // 🔒 força acesso no subdomínio do app
   if (!isAppHost()) {
-    window.location.href = 'https://app.plugconversa.com.br/admin'
+    window.location.href = 'https://app.plugconversa.com.br/dashboard'
     return null
   }
 
@@ -57,49 +49,65 @@ function RequireAdminHost({ children }) {
 }
 
 function Router() {
+  const appHost = isAppHost()
+
+  // ✅ No subdomínio app: rotas do app na raiz (sem /app)
+  if (appHost) {
+    return (
+      <Routes>
+        {/* Cliente (protegido) */}
+        <Route
+          path="/"
+          element={
+            <RequireAuth>
+              <AppShell kind="client" />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<Navigate to="dashboard" replace />} />
+          <Route path="dashboard" element={<Dashboard />} />
+          <Route path="inbox" element={<Inbox />} />
+          <Route path="crm" element={<CRM />} />
+          <Route path="disparo" element={<Disparo />} />
+          <Route path="fluxo" element={<Fluxo />} />
+          <Route path="configuracoes" element={<Configuracoes />} />
+          <Route path="suporte" element={<Suporte />} />
+          <Route path="contatos" element={<Contatos />} />
+          <Route path="campanhas" element={<Campanhas />} />
+          <Route path="automacao" element={<Automacao />} />
+        </Route>
+
+        {/* Admin (protegido) */}
+        <Route
+          path="/admin"
+          element={
+            <RequireAuth>
+              <AppShell kind="admin" />
+            </RequireAuth>
+          }
+        >
+          <Route index element={<AdminDashboard />} />
+          <Route path="clientes" element={<AdminClientes />} />
+          <Route path="planos" element={<AdminPlanos />} />
+        </Route>
+
+        {/* fallback */}
+        <Route path="*" element={<Navigate to="/dashboard" replace />} />
+      </Routes>
+    )
+  }
+
+  // ✅ No domínio principal: apenas institucional + login
   return (
     <Routes>
-      {/* Público */}
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/quero-ser-cliente" element={<QueroSerCliente />} />
 
-      {/* Cliente (protegido) */}
-      <Route
-        path="/app"
-        element={
-          <RequireAuth>
-            <AppShell kind="client" />
-          </RequireAuth>
-        }
-      >
-        <Route index element={<Dashboard />} />
-        <Route path="inbox" element={<Inbox />} />
-        <Route path="crm" element={<CRM />} />
-        <Route path="disparo" element={<Disparo />} />
-        <Route path="fluxo" element={<Fluxo />} />
-        <Route path="configuracoes" element={<Configuracoes />} />
-        <Route path="suporte" element={<Suporte />} />
-        <Route path="contatos" element={<Contatos />} />
-        <Route path="campanhas" element={<Campanhas />} />
-        <Route path="automacao" element={<Automacao />} />
-      </Route>
+      {/* bloqueia acesso direto às rotas internas no domínio principal */}
+      <Route path="/dashboard" element={<Navigate to="/login" replace />} />
+      <Route path="/admin/*" element={<Navigate to="/login" replace />} />
 
-      {/* Admin (protegido) */}
-      <Route
-        path="/admin"
-        element={
-          <RequireAdminHost>
-            <AppShell kind="admin" />
-          </RequireAdminHost>
-        }
-      >
-        <Route index element={<AdminDashboard />} />
-        <Route path="clientes" element={<AdminClientes />} />
-        <Route path="planos" element={<AdminPlanos />} />
-      </Route>
-
-      {/* fallback */}
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   )

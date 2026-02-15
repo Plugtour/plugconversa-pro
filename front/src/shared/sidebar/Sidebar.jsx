@@ -16,43 +16,43 @@ export default function Sidebar({ kind = 'client' }) {
       <nav className="pcSidebarNav">
         {kind === 'client' && (
           <>
-            <NavLink to="/app" end className={navClass}>
+            <NavLink to="/dashboard" className={navClass}>
               Dashboard
             </NavLink>
 
-            <NavLink to="/app/inbox" className={navClass}>
+            <NavLink to="/inbox" className={navClass}>
               Inbox
             </NavLink>
 
-            <NavLink to="/app/crm" className={navClass}>
+            <NavLink to="/crm" className={navClass}>
               CRM Kanban
             </NavLink>
 
-            <NavLink to="/app/disparo" className={navClass}>
+            <NavLink to="/disparo" className={navClass}>
               Disparo em Massa
             </NavLink>
 
-            <NavLink to="/app/fluxo" className={navClass}>
+            <NavLink to="/fluxo" className={navClass}>
               Fluxo de Conversa
             </NavLink>
 
-            <NavLink to="/app/contatos" className={navClass}>
+            <NavLink to="/contatos" className={navClass}>
               Contatos
             </NavLink>
 
-            <NavLink to="/app/campanhas" className={navClass}>
+            <NavLink to="/campanhas" className={navClass}>
               Campanhas
             </NavLink>
 
-            <NavLink to="/app/automacao" className={navClass}>
+            <NavLink to="/automacao" className={navClass}>
               Automação
             </NavLink>
 
-            <NavLink to="/app/configuracoes" className={navClass}>
+            <NavLink to="/configuracoes" className={navClass}>
               Configurações
             </NavLink>
 
-            <NavLink to="/app/suporte" className={navClass}>
+            <NavLink to="/suporte" className={navClass}>
               Suporte
             </NavLink>
           </>
