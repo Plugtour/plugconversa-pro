@@ -1,0 +1,34 @@
+/* caminho: front/src/theme/tokens.css */
+:root {
+  /* ===== Tipografia ===== */
+  --pc-font-sans: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, Arial, "Noto Sans", "Helvetica Neue", sans-serif;
+  --pc-font-size-base: 14px;
+
+  /* ===== Cores base (ajustaremos depois) ===== */
+  --pc-bg: #f6f7fb;
+  --pc-surface: #ffffff;
+  --pc-surface-2: #f2f4f8;
+  --pc-text: #111827;
+  --pc-muted: #6b7280;
+  --pc-border: rgba(17, 24, 39, 0.10);
+
+  /* ===== Marca (trocar depois para sua paleta) ===== */
+  --pc-primary: #2563eb;
+  --pc-primary-contrast: #ffffff;
+  --pc-success: #22c55e;
+  --pc-danger: #ef4444;
+  --pc-warning: #f59e0b;
+
+  /* ===== Raios e sombras ===== */
+  --pc-radius-sm: 10px;
+  --pc-radius-md: 14px;
+  --pc-radius-lg: 18px;
+
+  --pc-shadow-sm: 0 1px 2px rgba(0,0,0,0.06);
+  --pc-shadow-md: 0 10px 30px rgba(0,0,0,0.08);
+
+  /* ===== Layout ===== */
+  --pc-page-pad: 18px;
+  --pc-container-max: 1200px;
+}
+/* fim: front/src/theme/tokens.css */

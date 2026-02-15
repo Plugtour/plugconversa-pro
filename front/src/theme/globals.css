@@ -1,0 +1,73 @@
+/* caminho: front/src/theme/globals.css */
+
+/* Reset básico */
+*,
+*::before,
+*::after {
+  box-sizing: border-box;
+}
+
+html, body, #root {
+  height: 100%;
+}
+
+body {
+  margin: 0;
+  font-family: var(--pc-font-sans);
+  font-size: var(--pc-font-size-base);
+  background: var(--pc-bg);
+  color: var(--pc-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+/* Links */
+a {
+  color: inherit;
+  text-decoration: none;
+}
+
+/* Botões padrão */
+button {
+  font: inherit;
+  border: none;
+  cursor: pointer;
+}
+
+/* Inputs padrão */
+input, textarea, select {
+  font: inherit;
+  outline: none;
+}
+
+/* Containers padrão */
+.pc-container {
+  width: 100%;
+  max-width: var(--pc-container-max);
+  margin: 0 auto;
+}
+
+/* Página padrão */
+.pc-page {
+  padding: var(--pc-page-pad);
+}
+
+/* Cards base */
+.pc-card {
+  background: var(--pc-surface);
+  border-radius: var(--pc-radius-md);
+  box-shadow: var(--pc-shadow-sm);
+  border: 1px solid var(--pc-border);
+}
+
+/* Scroll padrão mais limpo */
+::-webkit-scrollbar {
+  width: 8px;
+}
+
+::-webkit-scrollbar-thumb {
+  background: rgba(0,0,0,0.15);
+  border-radius: 10px;
+}
+
+/* fim: front/src/theme/globals.css */

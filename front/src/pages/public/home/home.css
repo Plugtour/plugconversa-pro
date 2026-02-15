@@ -1,0 +1,45 @@
+/* caminho: front/src/pages/public/home/home.css */
+
+.home-card {
+  background: var(--pc-surface);
+  padding: 48px;
+  border-radius: var(--pc-radius-lg);
+  box-shadow: var(--pc-shadow-md);
+  border: 1px solid var(--pc-border);
+  text-align: center;
+  max-width: 640px;
+  margin: 0 auto;
+}
+
+.home-title {
+  margin: 0;
+  font-size: 32px;
+}
+
+.home-subtitle {
+  margin-top: 16px;
+  color: var(--pc-muted);
+  line-height: 1.6;
+}
+
+.home-question {
+  margin-top: 32px;
+  display: flex;
+  gap: 6px;
+  justify-content: center;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+.home-link {
+  color: var(--pc-primary);
+  font-weight: 600;
+}
+
+.home-actions {
+  margin-top: 16px;
+  display: flex;
+  justify-content: center;
+}
+
+/* fim: front/src/pages/public/home/home.css */

@@ -1,0 +1,50 @@
+/* caminho: front/src/pages/app/inbox/inbox.css */
+
+.pcInbox {
+  display: grid;
+  grid-template-columns: 320px 1fr;
+  height: 75vh;
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-lg);
+  overflow: hidden;
+}
+
+.pcInboxSidebar {
+  border-right: 1px solid var(--pc-border);
+  display: flex;
+  flex-direction: column;
+}
+
+.pcInboxHeader {
+  padding: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--pc-border);
+}
+
+.pcInboxListPlaceholder {
+  flex: 1;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+.pcInboxChat {
+  display: flex;
+  flex-direction: column;
+}
+
+.pcInboxChatHeader {
+  padding: 16px;
+  font-weight: 600;
+  border-bottom: 1px solid var(--pc-border);
+}
+
+.pcInboxChatBody {
+  flex: 1;
+  padding: 20px;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+/* fim: front/src/pages/app/inbox/inbox.css */

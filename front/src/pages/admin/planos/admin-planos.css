@@ -1,0 +1,40 @@
+/* caminho: front/src/pages/admin/planos/admin-planos.css */
+
+.pcPageCard {
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-lg);
+  padding: 28px;
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.pcPageHeader {
+  margin-bottom: 24px;
+}
+
+.pcPageTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.pcPageSubtitle {
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+.pcPageBody {
+  margin-top: 16px;
+}
+
+.pcTablePlaceholder {
+  padding: 40px;
+  border: 1px dashed var(--pc-border);
+  border-radius: var(--pc-radius-md);
+  text-align: center;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+/* fim: front/src/pages/admin/planos/admin-planos.css */

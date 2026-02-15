@@ -1,0 +1,47 @@
+/* caminho: front/src/pages/public/quero-ser-cliente/quero-ser-cliente.css */
+
+.qsc-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pc-bg);
+  padding: 20px;
+}
+
+.qsc-card {
+  background: var(--pc-surface);
+  padding: 40px;
+  border-radius: var(--pc-radius-lg);
+  box-shadow: var(--pc-shadow-md);
+  border: 1px solid var(--pc-border);
+  width: 100%;
+  max-width: 420px;
+}
+
+.qsc-title {
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.qsc-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.qsc-form input {
+  padding: 12px;
+  border-radius: var(--pc-radius-sm);
+  border: 1px solid var(--pc-border);
+}
+
+.qsc-button {
+  padding: 12px;
+  border-radius: var(--pc-radius-sm);
+  background: var(--pc-primary);
+  color: var(--pc-primary-contrast);
+  font-weight: 600;
+}
+
+/* fim: front/src/pages/public/quero-ser-cliente/quero-ser-cliente.css */

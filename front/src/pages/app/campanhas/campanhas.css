@@ -1,0 +1,13 @@
+/* caminho: front/src/pages/app/campanhas/campanhas.css */
+
+.pcCampaignPlaceholder {
+  background: var(--pc-surface-2);
+  border: 1px dashed var(--pc-border);
+  border-radius: var(--pc-radius-md);
+  padding: 32px;
+  text-align: center;
+  color: var(--pc-muted);
+  font-size: 14px;
+}
+
+/* fim: front/src/pages/app/campanhas/campanhas.css */

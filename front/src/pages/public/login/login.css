@@ -1,0 +1,47 @@
+/* caminho: front/src/pages/public/login/login.css */
+
+.login-wrapper {
+  min-height: 100vh;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: var(--pc-bg);
+  padding: 20px;
+}
+
+.login-card {
+  background: var(--pc-surface);
+  padding: 40px;
+  border-radius: var(--pc-radius-lg);
+  box-shadow: var(--pc-shadow-md);
+  border: 1px solid var(--pc-border);
+  width: 100%;
+  max-width: 400px;
+}
+
+.login-title {
+  margin: 0 0 24px 0;
+  text-align: center;
+}
+
+.login-form {
+  display: flex;
+  flex-direction: column;
+  gap: 16px;
+}
+
+.login-form input {
+  padding: 12px;
+  border-radius: var(--pc-radius-sm);
+  border: 1px solid var(--pc-border);
+}
+
+.login-button {
+  padding: 12px;
+  border-radius: var(--pc-radius-sm);
+  background: var(--pc-primary);
+  color: var(--pc-primary-contrast);
+  font-weight: 600;
+}
+
+/* fim: front/src/pages/public/login/login.css */

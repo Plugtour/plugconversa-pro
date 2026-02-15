@@ -1,0 +1,56 @@
+/* caminho: front/src/shared/layout/shell.css */
+
+.pcLayout {
+  display: flex;
+  height: 100vh;
+  background: #f5f6f8;
+}
+
+.pcLayoutMain {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.pcTopbar {
+  height: 60px;
+  background: #ffffff;
+  border-bottom: 1px solid #eee;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+}
+
+.pcTopbarTitle {
+  font-size: 15px;
+  font-weight: 600;
+  color: #333;
+}
+
+.pcTopbarUser {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.pcTopbarAvatar {
+  width: 34px;
+  height: 34px;
+  border-radius: 50%;
+  background: #111;
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.pcLayoutContent {
+  flex: 1;
+  overflow-y: auto;
+  padding: 24px;
+}
+
+/* fim: front/src/shared/layout/shell.css */

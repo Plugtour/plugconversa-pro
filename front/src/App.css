@@ -1,0 +1,19 @@
+/* caminho: front/src/App.css */
+
+/* Remove limite fixo do template padrão */
+#root {
+  height: 100%;
+  width: 100%;
+}
+
+/* Ajustes básicos da aplicação */
+h1 {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+p {
+  line-height: 1.5;
+}
+
+/* fim: front/src/App.css */

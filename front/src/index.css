@@ -1,0 +1,18 @@
+/* caminho: front/src/index.css */
+
+/* Arquivo mantido apenas para compatibilidade.
+   Toda estilização global está em:
+   - theme/tokens.css
+   - theme/globals.css
+*/
+
+/* Evitar conflitos do template padrão */
+:root {
+  all: unset;
+}
+
+body {
+  all: unset;
+}
+
+/* fim: front/src/index.css */

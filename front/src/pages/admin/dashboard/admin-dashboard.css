@@ -1,0 +1,55 @@
+/* caminho: front/src/pages/admin/dashboard/admin-dashboard.css */
+
+.pcPageCard {
+  background: var(--pc-surface);
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-lg);
+  padding: 28px;
+  box-shadow: var(--pc-shadow-sm);
+}
+
+.pcPageHeader {
+  margin-bottom: 24px;
+}
+
+.pcPageTitle {
+  margin: 0;
+  font-size: 22px;
+  font-weight: 600;
+}
+
+.pcPageSubtitle {
+  margin: 6px 0 0 0;
+  font-size: 14px;
+  color: var(--pc-muted);
+}
+
+.pcPageBody {
+  margin-top: 16px;
+}
+
+.pcKpiGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 16px;
+}
+
+.pcKpi {
+  background: var(--pc-bg);
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-md);
+  padding: 16px;
+}
+
+.pcKpiLabel {
+  font-size: 13px;
+  color: var(--pc-muted);
+  margin-bottom: 6px;
+}
+
+.pcKpiValue {
+  font-size: 20px;
+  font-weight: 600;
+}
+
+/* fim: front/src/pages/admin/dashboard/admin-dashboard.css */

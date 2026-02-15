@@ -1,0 +1,44 @@
+/* caminho: front/src/shared/sidebar/sidebar.css */
+
+.pcSidebar {
+  width: 240px;
+  background: var(--pc-surface);
+  border-right: 1px solid var(--pc-border);
+  display: flex;
+  flex-direction: column;
+  padding: 20px 16px;
+}
+
+.pcSidebarHeader {
+  margin-bottom: 24px;
+}
+
+.pcSidebarHeader h3 {
+  margin: 0;
+  font-size: 18px;
+}
+
+.pcSidebarNav {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.pcSidebarItem {
+  padding: 10px 12px;
+  border-radius: var(--pc-radius-sm);
+  color: var(--pc-text);
+  font-size: 14px;
+  transition: background 0.2s;
+}
+
+.pcSidebarItem:hover {
+  background: var(--pc-surface-2);
+}
+
+.pcSidebarItem.active {
+  background: var(--pc-primary);
+  color: var(--pc-primary-contrast);
+}
+
+/* fim: front/src/shared/sidebar/sidebar.css */

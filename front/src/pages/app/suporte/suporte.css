@@ -1,0 +1,13 @@
+/* caminho: front/src/pages/app/suporte/suporte.css */
+
+.pcSuportePlaceholder {
+  padding: 30px;
+  text-align: center;
+  font-size: 14px;
+  color: #888;
+  border: 1px dashed #ddd;
+  border-radius: 10px;
+  background: #fafafa;
+}
+
+/* fim: front/src/pages/app/suporte/suporte.css */
