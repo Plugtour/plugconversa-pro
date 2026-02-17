@@ -8,7 +8,7 @@ const router = express.Router()
  * Kanban (MVP)
  * Tabelas:
  * - kanban_boards (id, client_id, name, created_at)
- * - kanban_columns (id, board_id, title, position, created_at)
+ * - kanban_columns (id, board_id, title, position, color, created_at)
  * - kanban_cards (id, column_id, title, description, position, created_at)
  *
  * Multi-tenant (SaaS):
@@ -61,6 +61,20 @@ function toStr(x) {
   return s ? s : null
 }
 
+/**
+ * Por enquanto: validar só HEX (mais previsível pro UI).
+ */
+function normalizeColor(input) {
+  if (input === undefined || input === null) return null
+  const s = String(input).trim()
+  if (!s) return null
+
+  const ok = /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(s)
+  if (!ok) return null
+
+  return s.toUpperCase()
+}
+
 /** valida board do tenant */
 async function getBoardOrNull(boardId, clientId) {
   const r = await pool.query(
@@ -79,7 +93,7 @@ async function getBoardOrNull(boardId, clientId) {
 async function getColumnOrNull(columnId, clientId) {
   const r = await pool.query(
     `
-    SELECT c.id, c.board_id, c.title, c.position, c.created_at
+    SELECT c.id, c.board_id, c.title, c.position, c.color, c.created_at
     FROM kanban_columns c
     JOIN kanban_boards b ON b.id = c.board_id
     WHERE c.id = $1 AND b.client_id = $2
@@ -160,7 +174,7 @@ router.get('/boards/:boardId', requireClientId, async (req, res) => {
 
     const c = await pool.query(
       `
-      SELECT id, board_id, title, position, created_at
+      SELECT id, board_id, title, position, color, created_at
       FROM kanban_columns
       WHERE board_id = $1
       ORDER BY position ASC, id ASC
@@ -195,7 +209,7 @@ router.get('/boards/:boardId', requireClientId, async (req, res) => {
 // COLUMNS
 // =========================
 
-// POST /api/kanban/boards/:boardId/columns  { title }
+// POST /api/kanban/boards/:boardId/columns  { title, color? }
 router.post('/boards/:boardId/columns', requireClientId, async (req, res) => {
   try {
     const boardId = toInt(req.params.boardId)
@@ -203,6 +217,13 @@ router.post('/boards/:boardId/columns', requireClientId, async (req, res) => {
 
     const title = toStr(req.body?.title)
     if (!title) return sendErr(res, 400, 'validation_error', 'title é obrigatório')
+
+    const colorRaw = req.body?.color
+    const color = normalizeColor(colorRaw) || '#111111'
+
+    if (colorRaw !== undefined && colorRaw !== null && String(colorRaw).trim() && !normalizeColor(colorRaw)) {
+      return sendErr(res, 400, 'validation_error', 'color inválida. Use HEX (#RGB ou #RRGGBB).')
+    }
 
     const board = await getBoardOrNull(boardId, req.clientId)
     if (!board) return sendErr(res, 404, 'board_not_found')
@@ -215,11 +236,11 @@ router.post('/boards/:boardId/columns', requireClientId, async (req, res) => {
 
     const { rows } = await pool.query(
       `
-      INSERT INTO kanban_columns (board_id, title, position)
-      VALUES ($1, $2, $3)
-      RETURNING id, board_id, title, position, created_at
+      INSERT INTO kanban_columns (board_id, title, position, color)
+      VALUES ($1, $2, $3, $4)
+      RETURNING id, board_id, title, position, color, created_at
       `,
-      [boardId, title, nextPos]
+      [boardId, title, nextPos, color]
     )
 
     return sendOk(res, 201, { column: rows[0] })
@@ -228,26 +249,48 @@ router.post('/boards/:boardId/columns', requireClientId, async (req, res) => {
   }
 })
 
-// PUT /api/kanban/columns/:columnId  { title }
+// PUT /api/kanban/columns/:columnId  { title?, color? }
 router.put('/columns/:columnId', requireClientId, async (req, res) => {
   try {
     const columnId = toInt(req.params.columnId)
     if (!columnId) return sendErr(res, 400, 'validation_error', 'columnId inválido')
 
-    const title = toStr(req.body?.title)
-    if (!title) return sendErr(res, 400, 'validation_error', 'title é obrigatório')
-
     const col = await getColumnOrNull(columnId, req.clientId)
     if (!col) return sendErr(res, 404, 'column_not_found')
+
+    const titleRaw = req.body?.title
+    const colorRaw = req.body?.color
+
+    const nextTitle = titleRaw !== undefined ? toStr(titleRaw) : null
+    const nextColor = colorRaw !== undefined ? normalizeColor(colorRaw) : null
+
+    if (titleRaw === undefined && colorRaw === undefined) {
+      return sendErr(res, 400, 'validation_error', 'envie title e/ou color')
+    }
+
+    if (titleRaw !== undefined && !nextTitle) {
+      return sendErr(res, 400, 'validation_error', 'title é obrigatório')
+    }
+
+    if (colorRaw !== undefined && colorRaw !== null && String(colorRaw).trim() && !nextColor) {
+      return sendErr(res, 400, 'validation_error', 'color inválida. Use HEX (#RGB ou #RRGGBB).')
+    }
+
+    const finalTitle = nextTitle !== null ? nextTitle : col.title
+    const finalColor =
+      nextColor !== null
+        ? nextColor
+        : (colorRaw !== undefined && !String(colorRaw ?? '').trim() ? col.color : col.color)
 
     const { rows } = await pool.query(
       `
       UPDATE kanban_columns
-      SET title = $1
-      WHERE id = $2
-      RETURNING id, board_id, title, position, created_at
+      SET title = $1,
+          color = $2
+      WHERE id = $3
+      RETURNING id, board_id, title, position, color, created_at
       `,
-      [title, columnId]
+      [finalTitle, finalColor, columnId]
     )
 
     return sendOk(res, 200, { column: rows[0] })
@@ -267,9 +310,7 @@ router.delete('/columns/:columnId', requireClientId, async (req, res) => {
     if (!col) return sendErr(res, 404, 'column_not_found')
 
     await client.query('BEGIN')
-    // apaga cards da coluna
     await client.query(`DELETE FROM kanban_cards WHERE column_id = $1`, [columnId])
-    // apaga coluna
     await client.query(`DELETE FROM kanban_columns WHERE id = $1`, [columnId])
     await client.query('COMMIT')
 
@@ -291,15 +332,22 @@ router.put('/boards/:boardId/columns/reorder', requireClientId, async (req, res)
     const boardId = toInt(req.params.boardId)
     if (!boardId) return sendErr(res, 400, 'validation_error', 'boardId inválido')
 
-    const ordered = Array.isArray(req.body?.ordered_ids) ? req.body.ordered_ids : null
-    if (!ordered || ordered.length === 0) {
-      return sendErr(res, 400, 'validation_error', 'ordered_ids é obrigatório')
+    const raw = Array.isArray(req.body?.ordered_ids) ? req.body.ordered_ids : null
+    if (!raw || raw.length === 0) return sendErr(res, 400, 'validation_error', 'ordered_ids é obrigatório')
+
+    // ✅ normaliza + valida duplicados
+    const ordered = raw.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0)
+    if (ordered.length !== raw.length) {
+      return sendErr(res, 400, 'validation_error', 'ordered_ids deve conter apenas inteiros positivos')
+    }
+    const uniq = new Set(ordered)
+    if (uniq.size !== ordered.length) {
+      return sendErr(res, 400, 'validation_error', 'ordered_ids contém ids duplicados')
     }
 
     const board = await getBoardOrNull(boardId, req.clientId)
     if (!board) return sendErr(res, 404, 'board_not_found')
 
-    // valida se todas as colunas pertencem ao board
     const chk = await pool.query(
       `
       SELECT id
@@ -315,10 +363,7 @@ router.put('/boards/:boardId/columns/reorder', requireClientId, async (req, res)
 
     await client.query('BEGIN')
     for (let i = 0; i < ordered.length; i++) {
-      await client.query(
-        `UPDATE kanban_columns SET position = $1 WHERE id = $2`,
-        [i + 1, Number(ordered[i])]
-      )
+      await client.query(`UPDATE kanban_columns SET position = $1 WHERE id = $2`, [i + 1, ordered[i]])
     }
     await client.query('COMMIT')
 
@@ -426,15 +471,21 @@ router.put('/columns/:columnId/cards/reorder', requireClientId, async (req, res)
     const columnId = toInt(req.params.columnId)
     if (!columnId) return sendErr(res, 400, 'validation_error', 'columnId inválido')
 
-    const ordered = Array.isArray(req.body?.ordered_ids) ? req.body.ordered_ids : null
-    if (!ordered || ordered.length === 0) {
-      return sendErr(res, 400, 'validation_error', 'ordered_ids é obrigatório')
+    const raw = Array.isArray(req.body?.ordered_ids) ? req.body.ordered_ids : null
+    if (!raw || raw.length === 0) return sendErr(res, 400, 'validation_error', 'ordered_ids é obrigatório')
+
+    const ordered = raw.map((x) => Number(x)).filter((n) => Number.isFinite(n) && n > 0)
+    if (ordered.length !== raw.length) {
+      return sendErr(res, 400, 'validation_error', 'ordered_ids deve conter apenas inteiros positivos')
+    }
+    const uniq = new Set(ordered)
+    if (uniq.size !== ordered.length) {
+      return sendErr(res, 400, 'validation_error', 'ordered_ids contém ids duplicados')
     }
 
     const col = await getColumnOrNull(columnId, req.clientId)
     if (!col) return sendErr(res, 404, 'column_not_found')
 
-    // valida se todos os cards pertencem à coluna
     const chk = await pool.query(
       `
       SELECT id
@@ -450,10 +501,7 @@ router.put('/columns/:columnId/cards/reorder', requireClientId, async (req, res)
 
     await client.query('BEGIN')
     for (let i = 0; i < ordered.length; i++) {
-      await client.query(
-        `UPDATE kanban_cards SET position = $1 WHERE id = $2`,
-        [i + 1, Number(ordered[i])]
-      )
+      await client.query(`UPDATE kanban_cards SET position = $1 WHERE id = $2`, [i + 1, ordered[i]])
     }
     await client.query('COMMIT')
 
@@ -486,19 +534,111 @@ router.put('/cards/:cardId/move', requireClientId, async (req, res) => {
     const toCol = await getColumnOrNull(toColumnId, req.clientId)
     if (!toCol) return sendErr(res, 404, 'target_column_not_found')
 
-    // posição alvo
+    const fromColumnId = Number(card.column_id)
+    const fromPos = Number(card.position)
+
     let toPos = Number.isFinite(toPosRaw) && toPosRaw > 0 ? Math.floor(toPosRaw) : null
-    if (!toPos) {
-      const pos = await pool.query(
-        `SELECT COALESCE(MAX(position), 0) + 1 AS next_pos FROM kanban_cards WHERE column_id = $1`,
-        [toColumnId]
-      )
-      toPos = Number(pos?.rows?.[0]?.next_pos || 1)
-    }
 
     await client.query('BEGIN')
 
-    // move o card
+    // ✅ clamp por CONTAGEM (evita bug de "n+1" na mesma coluna)
+    if (fromColumnId === toColumnId) {
+      const cntR = await client.query(
+        `SELECT COUNT(*)::int AS cnt FROM kanban_cards WHERE column_id = $1 AND id <> $2`,
+        [toColumnId, cardId]
+      )
+      const cnt = Number(cntR?.rows?.[0]?.cnt || 0)
+      const maxInsert = cnt + 1 // posições válidas: 1..n
+
+      if (!toPos) toPos = maxInsert
+      if (toPos < 1) toPos = 1
+      if (toPos > maxInsert) toPos = maxInsert
+
+      if (toPos === fromPos) {
+        const r = await client.query(
+          `
+          SELECT id, column_id, title, description, position, created_at
+          FROM kanban_cards
+          WHERE id = $1
+          `,
+          [cardId]
+        )
+        await client.query('COMMIT')
+        return sendOk(res, 200, { card: r?.rows?.[0] })
+      }
+
+      if (toPos > fromPos) {
+        await client.query(
+          `
+          UPDATE kanban_cards
+          SET position = position - 1
+          WHERE column_id = $1
+            AND position > $2
+            AND position <= $3
+            AND id <> $4
+          `,
+          [fromColumnId, fromPos, toPos, cardId]
+        )
+      } else {
+        await client.query(
+          `
+          UPDATE kanban_cards
+          SET position = position + 1
+          WHERE column_id = $1
+            AND position >= $2
+            AND position < $3
+            AND id <> $4
+          `,
+          [fromColumnId, toPos, fromPos, cardId]
+        )
+      }
+
+      const moved = await client.query(
+        `
+        UPDATE kanban_cards
+        SET position = $1
+        WHERE id = $2
+        RETURNING id, column_id, title, description, position, created_at
+        `,
+        [toPos, cardId]
+      )
+
+      await client.query('COMMIT')
+      return sendOk(res, 200, { card: moved?.rows?.[0] })
+    }
+
+    // coluna diferente
+    const cntR = await client.query(
+      `SELECT COUNT(*)::int AS cnt FROM kanban_cards WHERE column_id = $1`,
+      [toColumnId]
+    )
+    const cnt = Number(cntR?.rows?.[0]?.cnt || 0)
+    const maxInsert = cnt + 1 // pode inserir no fim
+
+    if (!toPos) toPos = maxInsert
+    if (toPos < 1) toPos = 1
+    if (toPos > maxInsert) toPos = maxInsert
+
+    await client.query(
+      `
+      UPDATE kanban_cards
+      SET position = position + 1
+      WHERE column_id = $1
+        AND position >= $2
+      `,
+      [toColumnId, toPos]
+    )
+
+    await client.query(
+      `
+      UPDATE kanban_cards
+      SET position = position - 1
+      WHERE column_id = $1
+        AND position > $2
+      `,
+      [fromColumnId, fromPos]
+    )
+
     const moved = await client.query(
       `
       UPDATE kanban_cards
@@ -511,7 +651,6 @@ router.put('/cards/:cardId/move', requireClientId, async (req, res) => {
     )
 
     await client.query('COMMIT')
-
     return sendOk(res, 200, { card: moved?.rows?.[0] })
   } catch (err) {
     try {

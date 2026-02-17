@@ -2,6 +2,10 @@
 
 .pcSidebar {
   width: 240px;
+  min-width: 240px;   /* ✅ impede encolher */
+  max-width: 240px;   /* ✅ impede expandir */
+  flex: 0 0 240px;    /* ✅ trava completamente no flex */
+
   background: var(--pc-surface);
   border-right: 1px solid var(--pc-border);
   display: flex;

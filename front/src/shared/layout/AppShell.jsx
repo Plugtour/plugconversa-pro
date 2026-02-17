@@ -1,6 +1,6 @@
 // caminho: front/src/shared/layout/AppShell.jsx
 import { useEffect } from 'react'
-import { Outlet } from 'react-router-dom'
+import { Outlet, useNavigate } from 'react-router-dom'
 import Sidebar from '../sidebar/Sidebar.jsx'
 import './shell.css'
 
@@ -10,26 +10,47 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(';').shift()
 }
 
+function isLocalhost() {
+  const h = window.location.hostname
+  return h === 'localhost' || h === '127.0.0.1'
+}
+
 function clearAuthCookie() {
-  // remove em todos os subdomínios
+  // ✅ DEV/LOCAL: cookie simples
+  if (isLocalhost()) {
+    document.cookie = 'pc_auth=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; SameSite=Lax'
+    return
+  }
+
+  // ✅ PRODUÇÃO: remove em todos os subdomínios
   document.cookie =
     'pc_auth=; domain=.plugconversa.com.br; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT; Secure; SameSite=Lax'
 }
 
 export default function AppShell({ kind = 'client' }) {
-  const isAppHost = window.location.hostname.startsWith('app.')
+  const navigate = useNavigate()
+  const local = isLocalhost()
+  const isAppHost = local || window.location.hostname.startsWith('app.')
 
   useEffect(() => {
     const isAuth = !!getCookie('pc_auth')
 
-    // 🔒 se estiver no subdomínio e não estiver logado -> volta pro login do domínio principal
+    // 🔒 Se estiver no app/localhost e não estiver logado -> vai pro login interno
     if (isAppHost && !isAuth) {
-      window.location.href = 'https://plugconversa.com.br/login'
+      navigate('/login', { replace: true })
     }
-  }, [isAppHost])
+  }, [isAppHost, navigate])
 
   function onLogout() {
     clearAuthCookie()
+
+    // ✅ DEV/LOCAL e APP: volta pro login interno
+    if (isAppHost) {
+      navigate('/login', { replace: true })
+      return
+    }
+
+    // ✅ fallback (domínio principal em produção)
     window.location.href = 'https://plugconversa.com.br/login'
   }
 
@@ -49,6 +70,7 @@ export default function AppShell({ kind = 'client' }) {
             <div className="pcTopbarUser">
               <div className="pcTopbarAvatar">PC</div>
 
+              {/* ✅ em localhost e no app mostra o botão sair */}
               {isAppHost && (
                 <button
                   type="button"

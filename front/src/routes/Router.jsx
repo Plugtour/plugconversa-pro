@@ -26,21 +26,34 @@ function getCookie(name) {
   if (parts.length === 2) return parts.pop().split(';').shift()
 }
 
+function isLocalhost() {
+  const h = window.location.hostname
+  return h === 'localhost' || h === '127.0.0.1'
+}
+
 function isAppHost() {
+  // ✅ DEV: localhost se comporta como app (pra você conseguir trabalhar)
+  if (isLocalhost()) return true
   return window.location.hostname.startsWith('app.')
 }
 
 function RequireAuth({ children }) {
   const authed = !!getCookie('pc_auth')
+  const local = isLocalhost()
+  const appHost = isAppHost()
 
-  // 🔒 se não estiver logado, manda sempre pro login do domínio principal
+  // ✅ Se não estiver logado
   if (!authed) {
+    // DEV/local e app: vai pra /login interno
+    if (local || appHost) return <Navigate to="/login" replace />
+
+    // domínio principal (produção): manda pro login do domínio principal
     window.location.href = 'https://plugconversa.com.br/login'
     return null
   }
 
-  // 🔒 força acesso no subdomínio do app
-  if (!isAppHost()) {
+  // ✅ Se estiver logado, mas entrou no domínio principal em produção, força app
+  if (!local && !window.location.hostname.startsWith('app.')) {
     window.location.href = 'https://app.plugconversa.com.br/dashboard'
     return null
   }
@@ -51,10 +64,13 @@ function RequireAuth({ children }) {
 function Router() {
   const appHost = isAppHost()
 
-  // ✅ No subdomínio app: rotas do app na raiz (sem /app)
+  // ✅ No subdomínio app OU no localhost: rotas do app na raiz
   if (appHost) {
     return (
       <Routes>
+        {/* Público (local/app) */}
+        <Route path="/login" element={<Login />} />
+
         {/* Cliente (protegido) */}
         <Route
           path="/"
@@ -97,7 +113,7 @@ function Router() {
     )
   }
 
-  // ✅ No domínio principal: apenas institucional + login
+  // ✅ No domínio principal (produção): apenas institucional + login
   return (
     <Routes>
       <Route path="/" element={<Home />} />

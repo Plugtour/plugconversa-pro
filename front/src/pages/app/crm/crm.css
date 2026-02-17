@@ -1,36 +1,403 @@
 /* caminho: front/src/pages/app/crm/crm.css */
 
-.pcKanban {
-  display: flex;
-  gap: 20px;
-  overflow-x: auto;
-  padding-bottom: 10px;
+.pcCrmPage{
+  display:flex;
+  flex-direction:column;
+  gap:14px;
+  min-height:calc(100vh - 90px);
 }
 
-.pcKanbanColumn {
-  min-width: 260px;
-  background: #f9fafb;
-  border: 1px solid #eee;
-  border-radius: 10px;
-  display: flex;
-  flex-direction: column;
+/* ===== Header ===== */
+.pcCrmHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:14px;
+
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;
+  padding:14px 14px;
 }
 
-.pcKanbanColumnHeader {
-  padding: 12px 14px;
-  font-weight: 600;
-  font-size: 14px;
-  border-bottom: 1px solid #eee;
-  background: #fff;
-  border-top-left-radius: 10px;
-  border-top-right-radius: 10px;
+.pcCrmHeader h1{
+  margin:0;
+  font-size:18px;
+  line-height:1.2;
+  font-weight:700;
+  color:#111;
 }
 
-.pcKanbanEmpty {
-  padding: 20px;
-  font-size: 13px;
-  color: #999;
-  text-align: center;
+.pcCrmHeader p{
+  margin:6px 0 0;
+  font-size:12px;
+  color:rgba(0,0,0,0.55);
+}
+
+.pcCrmActions{
+  display:flex;
+  align-items:center;
+  gap:10px;
+  flex:0 0 auto;
+}
+
+.pcCrmActions button{
+  height:36px;
+  padding:0 12px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  font-size:13px;
+  font-weight:600;
+  color:#111;
+  cursor:pointer;
+  transition:all 150ms ease;
+}
+
+.pcCrmActions button:hover{
+  background:rgba(0,0,0,0.03);
+}
+
+.pcCrmActions button:active{
+  transform:translateY(1px);
+}
+
+.pcCrmActions button.pcBtnPrimary{
+  background:#111;
+  color:#fff;
+  border-color:#111;
+}
+
+.pcCrmActions button.pcBtnPrimary:hover{
+  background:#0b0b0b;
+}
+
+/* ===== Board ===== */
+.pcCrmBoardWrapper{
+  position:relative;
+  flex:1;
+  min-height:0;
+
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;
+
+  padding:12px;
+  overflow:hidden;
+}
+
+.pcCrmBoard{
+  display:flex;
+  align-items:flex-start;
+  gap:12px;
+
+  height:100%;
+  min-height:420px;
+
+  overflow:auto;
+  padding:2px 2px 8px;
+}
+
+/* Scrollbar */
+.pcCrmBoard::-webkit-scrollbar{
+  height:10px;
+  width:10px;
+}
+.pcCrmBoard::-webkit-scrollbar-thumb{
+  background:rgba(0,0,0,0.14);
+  border-radius:999px;
+}
+.pcCrmBoard::-webkit-scrollbar-track{
+  background:rgba(0,0,0,0.04);
+  border-radius:999px;
+}
+
+/* ===== Coluna ===== */
+.pcCrmCol{
+  width:290px;
+  flex:0 0 auto;
+  background:#f1f3f5;
+  border:1px solid rgba(0,0,0,0.06);
+  border-radius:14px;
+  padding:10px;
+  transition:box-shadow 180ms ease, transform 180ms ease, opacity 120ms ease;
+
+  cursor:grab;
+  user-select:none;
+  -webkit-user-select:none;
+}
+
+.pcCrmCol:active{
+  cursor:grabbing;
+}
+
+/* coluna enquanto está sendo arrastada */
+.pcCrmCol[style*="opacity: 0.9"]{
+  background:#e6eaee;
+}
+
+.pcCrmCol:hover{
+  box-shadow:0 8px 22px rgba(0,0,0,0.06);
+}
+
+.pcCrmColTopbar{
+  height:5px;
+  border-radius:999px;
+  margin:2px 2px 10px;
+}
+
+.pcCrmColHeader{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  padding:2px 2px 10px;
+
+  /* ✅ garante cor explícita no header */
+  color:#111;
+
+  /* ✅ estabiliza renderização do texto durante transforms do DnD */
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.pcCrmColTitle strong{
+  font-size:13px;
+  font-weight:800;
+  color:#111;
+
+  /* ✅ evita “texto transparente” em alguns casos de composição */
+  -webkit-text-fill-color: currentColor;
+
+  /* ✅ estabiliza renderização do texto durante drag */
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.pcCrmColHeaderRight{
+  display:flex;
+  align-items:center;
+  gap:8px;
+}
+
+/* ✅ nessas áreas NÃO mostra “grab”, porque são áreas de interação */
+.pcCrmColHeaderRight,
+.pcCrmColHeaderRight *{
+  cursor:default;
+  user-select:auto;
+  -webkit-user-select:auto;
+}
+
+.pcCrmColBadge{
+  height:18px;
+  min-width:18px;
+  padding:0 6px;
+  border-radius:999px;
+  background:rgba(0,0,0,0.08);
+  font-size:11px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-weight:700;
+
+  color:#111;
+  -webkit-text-fill-color: currentColor;
+
+  -webkit-font-smoothing: antialiased;
+  backface-visibility: hidden;
+  -webkit-backface-visibility: hidden;
+  transform: translateZ(0);
+}
+
+.pcCrmDots,
+.pcCrmGrip{
+  width:30px;
+  height:28px;
+  border-radius:10px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background 150ms ease, transform 120ms ease;
+}
+
+.pcCrmGrip{
+  cursor:grab;
+  font-weight:900;
+}
+
+.pcCrmColBody{
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:12px;
+  padding:10px;
+  min-height:320px;
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+
+  cursor:default;
+  user-select:auto;
+  -webkit-user-select:auto;
+}
+
+.pcCrmEmpty{
+  background:#f6f7f8;
+  border:1px dashed rgba(0,0,0,0.18);
+  border-radius:12px;
+  padding:12px;
+  font-size:12px;
+  color:rgba(0,0,0,0.55);
+}
+
+/* ===== Card ===== */
+.pcCrmCard{
+  background:#fff;
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:12px;
+  padding:10px;
+  transition:box-shadow 180ms ease;
+
+  cursor:grab;
+}
+
+.pcCrmCard:active{
+  cursor:grabbing;
+}
+
+.pcCrmCard:hover{
+  box-shadow:0 4px 14px rgba(0,0,0,0.08);
+}
+
+.pcCrmCardTop{
+  display:flex;
+  justify-content:space-between;
+  align-items:flex-start;
+}
+
+.pcCrmCardTitleWrap{
+  min-width:0;
+}
+
+.pcCrmCardSub{
+  margin-top:6px;
+  font-size:12px;
+  color:rgba(0,0,0,0.55);
+  line-height:1.25;
+}
+
+.pcCrmCardRight{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  flex:0 0 auto;
+}
+
+.pcCrmCardTitle{
+  font-size:13px;
+  font-weight:800;
+  color:#111;
+}
+
+.pcCrmCardId{
+  font-size:12px;
+  color:rgba(0,0,0,0.45);
+  font-weight:700;
+}
+
+/* ===== Modal ===== */
+.pcCrmModalBackdrop{
+  position:fixed;
+  inset:0;
+  z-index:20000;
+  background:rgba(0,0,0,0.28);
+  backdrop-filter:blur(6px);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+}
+
+.pcCrmModal{
+  width:min(520px, 96vw);
+  background:#fff;
+  border-radius:16px;
+  box-shadow:0 18px 60px rgba(0,0,0,0.22);
+  overflow:hidden;
+}
+
+.pcCrmModalHeader{
+  display:flex;
+  justify-content:space-between;
+  padding:14px;
+  border-bottom:1px solid rgba(0,0,0,0.06);
+}
+
+.pcCrmModalBody{
+  padding:14px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+/* PREVIEW NOVA COLUNA */
+.pcCrmColPreview{
+  border:1px solid rgba(0,0,0,0.08);
+  border-radius:14px;
+  padding:10px;
+  background:#f1f3f5;
+}
+
+.pcCrmColPreviewTitle{
+  font-size:13px;
+  font-weight:800;
+  margin-top:6px;
+  color:#111;
+}
+
+.pcCrmField{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+.pcCrmField input{
+  height:40px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  padding:0 12px;
+}
+
+.pcCrmColorRow{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.pcCrmModalActions{
+  display:flex;
+  justify-content:flex-end;
+  gap:10px;
+}
+
+.pcCrmModalActions button{
+  height:38px;
+  padding:0 12px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  cursor:pointer;
+  font-weight:700;
+}
+
+.pcCrmModalActions button.pcBtnPrimary{
+  background:#111;
+  color:#fff;
 }
 
 /* fim: front/src/pages/app/crm/crm.css */
