@@ -10,4 +10,403 @@
   background: #fafafa;
 }
 
+/* ===== Botões ===== */
+
+.pcBtnPrimary {
+  background: #2563eb;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pcBtnPrimary:hover {
+  opacity: 0.9;
+}
+
+/* botão mini */
+
+.pcBtnMini {
+  background: transparent;
+  border: none;
+  font-size: 14px;
+  cursor: pointer;
+  color: #999;
+  padding: 2px 6px;
+  border-radius: 6px;
+  transition: 0.2s;
+  line-height: 1;
+}
+
+.pcBtnMini:hover {
+  background: #f3f4f6;
+  color: #ef4444;
+}
+
+/* botão ghost (modal) */
+.pcBtnGhost {
+  background: #f3f4f6;
+  color: #111;
+  border: 1px solid #e5e7eb;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pcBtnGhost:hover {
+  background: #e5e7eb;
+}
+
+/* ===== Grid ===== */
+
+.pcFluxoGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 15px;
+}
+
+/* grid específico das etapas (1 coluna) */
+.pcFluxoGridSteps {
+  grid-template-columns: 1fr;
+  gap: 10px;
+}
+
+/* ===== Cards ===== */
+
+.pcFluxoCard {
+  padding: 16px;
+  border-radius: 12px;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+  cursor: pointer;
+  transition: 0.18s;
+}
+
+.pcFluxoCard:hover {
+  border-color: #2563eb;
+  box-shadow: 0 4px 14px rgba(0, 0, 0, 0.05);
+}
+
+.pcFluxoCard strong {
+  font-size: 14px;
+  color: #111;
+  line-height: 1.2;
+}
+
+.pcFluxoCard span {
+  font-size: 12px;
+  color: #777;
+  line-height: 1.3;
+}
+
+/* overlay do drag */
+.pcFluxoCardOverlay {
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
+  border-color: #cbd5e1;
+  cursor: grabbing;
+}
+
+/* handle drag */
+.pcFluxoDrag {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
+  border-radius: 8px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  color: #6b7280;
+  user-select: none;
+  cursor: grab;
+  flex: 0 0 auto;
+}
+
+.pcFluxoDrag:hover {
+  border-color: #cbd5e1;
+  background: #f1f5f9;
+}
+
+.pcFluxoDrag:active {
+  cursor: grabbing;
+}
+
+/* suaviza reordenação */
+.pcFluxoGridSteps .pcFluxoCard {
+  will-change: transform;
+}
+
+/* =========================
+   BUILDER (fluxo linear)
+========================= */
+
+.pcFluxoBuilder {
+  padding-top: 10px;
+}
+
+.pcFluxoBuilderTop {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 16px;
+}
+
+.pcFluxoBuilderMeta {
+  margin-bottom: 12px;
+  font-size: 13px;
+  color: #666;
+}
+
+.pcFluxoBuilderMetaStrong {
+  color: #111;
+}
+
+.pcFluxoTimeline {
+  display: flex;
+  flex-direction: column;
+  gap: 14px;
+  padding: 6px 0 2px;
+}
+
+.pcFluxoStepWrap {
+  display: grid;
+  grid-template-columns: 34px 1fr;
+  gap: 12px;
+  align-items: stretch;
+}
+
+.pcFluxoStepRail {
+  position: relative;
+  width: 34px;
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+}
+
+.pcFluxoStepDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 999px;
+  background: #2563eb;
+  margin-top: 18px;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.pcFluxoStepLineTop,
+.pcFluxoStepLineBottom {
+  position: absolute;
+  left: 50%;
+  width: 2px;
+  transform: translateX(-50%);
+  background: #e5e7eb;
+}
+
+.pcFluxoStepLineTop {
+  top: 0;
+  height: 18px;
+}
+
+.pcFluxoStepLineBottom {
+  top: 30px;
+  bottom: -14px;
+}
+
+.pcFluxoStepCard {
+  cursor: default;
+}
+
+.pcFluxoStepTop {
+  display: flex;
+  justify-content: space-between;
+  gap: 10px;
+  align-items: flex-start;
+}
+
+.pcFluxoStepTopLeft {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  min-width: 0;
+}
+
+.pcFluxoStepTitleWrap {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+}
+
+.pcFluxoStepTitleRow {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.pcFluxoStepTitle {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 14px;
+  color: #111;
+  line-height: 1.2;
+}
+
+.pcFluxoStepBadge {
+  font-size: 11px;
+  color: #1f2937;
+  background: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  padding: 2px 8px;
+  border-radius: 999px;
+  line-height: 1.4;
+  flex: 0 0 auto;
+}
+
+.pcFluxoStepMeta {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.pcFluxoStepActions {
+  display: flex;
+  gap: 6px;
+  flex: 0 0 auto;
+}
+
+.pcFluxoStepBody {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcFluxoStepMsg {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.45;
+  white-space: pre-wrap;
+}
+
+.pcFluxoStepFooter {
+  font-size: 11px;
+  color: #9ca3af;
+}
+
+/* =========================
+   MODAL (edição/criação)
+========================= */
+
+.pcFluxoModalBackdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 10000;
+  background: rgba(0, 0, 0, 0.28);
+  backdrop-filter: blur(6px);
+  -webkit-backdrop-filter: blur(6px);
+  display: grid;
+  place-items: center;
+  padding: 18px;
+}
+
+.pcFluxoModal {
+  width: min(560px, 92vw);
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
+  overflow: hidden;
+}
+
+.pcFluxoModalHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 14px 14px;
+  border-bottom: 1px solid #eef2f7;
+  background: #fbfdff;
+}
+
+.pcFluxoModalTitle {
+  font-size: 14px;
+  color: #111;
+}
+
+.pcFluxoModalBody {
+  padding: 14px;
+}
+
+.pcFluxoForm {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pcFluxoField {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pcFluxoLabel {
+  font-size: 12px;
+  color: #6b7280;
+}
+
+.pcFluxoInput,
+.pcFluxoTextarea,
+.pcFluxoSelect {
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 10px;
+  padding: 10px 12px;
+  font-size: 13px;
+  outline: none;
+  transition: 0.15s;
+}
+
+.pcFluxoTextarea {
+  resize: vertical;
+  min-height: 110px;
+}
+
+.pcFluxoInput:focus,
+.pcFluxoTextarea:focus,
+.pcFluxoSelect:focus {
+  border-color: #2563eb;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.12);
+}
+
+.pcFluxoModalActions {
+  margin-top: 6px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+/* responsivo */
+@media (max-width: 520px) {
+  .pcFluxoStepWrap {
+    grid-template-columns: 28px 1fr;
+    gap: 10px;
+  }
+
+  .pcFluxoStepRail {
+    width: 28px;
+  }
+
+  .pcFluxoStepDot {
+    margin-top: 18px;
+  }
+}
+
 /* fim: front/src/pages/app/fluxo/fluxo.css */

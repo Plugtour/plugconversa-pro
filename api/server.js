@@ -13,13 +13,42 @@ const app = express()
 app.use(express.json({ limit: '2mb' }))
 app.use(cookieParser())
 
-// CORS (ajuste fino depois quando o front estiver definido)
+// ===== CORS (permite header x-client-id + preflight) =====
 app.use(
   cors({
     origin: true,
-    credentials: true
+    credentials: true,
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
+    allowedHeaders: ['Content-Type', 'Authorization', 'x-client-id'],
+    exposedHeaders: ['x-client-id']
   })
 )
+
+
+// ===== DEV fallback client_id (apenas localhost) =====
+app.use((req, res, next) => {
+  const h = req.headers['x-client-id']
+  const host = String(req.headers.host || '')
+  const isLocalhost =
+    host.includes('localhost') ||
+    host.includes('127.0.0.1') ||
+    req.hostname === 'localhost' ||
+    req.hostname === '127.0.0.1'
+
+  // Se não veio header, assume 1 somente em DEV/local
+  if ((!h || String(h).trim() === '') && isLocalhost) {
+    req.headers['x-client-id'] = '1'
+  }
+
+  next()
+})
+
+// ✅ LOG simples (debug) — ajuda ver o erro do /flow no terminal
+app.use((req, res, next) => {
+  const clientId = req.headers['x-client-id']
+  console.log(`[API] ${req.method} ${req.originalUrl} x-client-id=${clientId ?? '-'}`)
+  next()
+})
 
 // ===== Healthcheck (simples) =====
 app.get('/health', (req, res) => {
