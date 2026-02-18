@@ -66,6 +66,19 @@ function toTextOrNull(v) {
   return s === '' ? null : s
 }
 
+function toStepTypeOrNull(v) {
+  if (v === undefined || v === null) return null
+  const s = String(v).trim().toLowerCase()
+  if (!s) return null
+  if (s === 'message' || s === 'condition' || s === 'wait') return s
+  return null
+}
+
+function normalizeStepType(v) {
+  const t = String(v || '').trim().toLowerCase()
+  return t === 'condition' || t === 'wait' || t === 'message' ? t : 'message'
+}
+
 async function ensureFolderBelongsToClient(clientId, folderId) {
   if (!folderId) return true
   const id = Number(folderId)
@@ -85,6 +98,21 @@ async function ensureFlowBelongsToClient(clientId, flowId) {
   const { rows } = await pool.query(
     `SELECT 1 FROM public.flows WHERE client_id = $1 AND id = $2 LIMIT 1`,
     [clientId, id]
+  )
+  return !!rows[0]
+}
+
+async function ensureStepBelongsToClientAndFlow(clientId, flowId, stepId) {
+  if (!stepId) return true
+  const id = Number(stepId)
+  if (!Number.isFinite(id) || id <= 0) return false
+
+  const { rows } = await pool.query(
+    `SELECT 1
+     FROM public.flow_steps
+     WHERE client_id = $1 AND flow_id = $2 AND id = $3
+     LIMIT 1`,
+    [clientId, flowId, id]
   )
   return !!rows[0]
 }
@@ -208,7 +236,12 @@ router.get('/:flowId/steps', requireClientId, async (req, res) => {
     if (!okFlow) return res.status(404).json({ ok: false, error: 'flow_not_found' })
 
     const { rows } = await pool.query(
-      `SELECT id, client_id, flow_id, title, message, position, created_at
+      `SELECT
+         id, client_id, flow_id,
+         title, message,
+         type,
+         next_step_id, condition_true_id, condition_false_id,
+         position, created_at
        FROM public.flow_steps
        WHERE client_id = $1 AND flow_id = $2
        ORDER BY position ASC, id ASC`,
@@ -232,19 +265,64 @@ router.post('/:flowId/steps', requireClientId, async (req, res) => {
     const okFlow = await ensureFlowBelongsToClient(req.clientId, flowId)
     if (!okFlow) return res.status(404).json({ ok: false, error: 'flow_not_found' })
 
+    const typeRaw = req.body?.type
+    const type = typeRaw === undefined ? 'message' : toStepTypeOrNull(typeRaw)
+    if (!type) return res.status(400).json({ ok: false, error: 'type_invalid' })
+
     const title = toTextOrNull(req.body?.title)
     const message = toTextOrNull(req.body?.message)
 
     if (!title) return res.status(400).json({ ok: false, error: 'title_required' })
-    if (!message) return res.status(400).json({ ok: false, error: 'message_required' })
+
+    // ✅ message obrigatório apenas para "message"
+    if (type === 'message' && !message) {
+      return res.status(400).json({ ok: false, error: 'message_required' })
+    }
 
     const pos = toPosIntOrNull(req.body?.position) ?? 0
 
+    const nextStepId = toIdOrNull(req.body?.next_step_id)
+    const conditionTrueId = toIdOrNull(req.body?.condition_true_id)
+    const conditionFalseId = toIdOrNull(req.body?.condition_false_id)
+
+    // ✅ referências devem ser da mesma flow + client
+    if (nextStepId) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, nextStepId)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'next_step_not_found' })
+    }
+    if (conditionTrueId) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, conditionTrueId)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'condition_true_not_found' })
+    }
+    if (conditionFalseId) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, conditionFalseId)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'condition_false_not_found' })
+    }
+
     const { rows } = await pool.query(
-      `INSERT INTO public.flow_steps (client_id, flow_id, title, message, position)
-       VALUES ($1, $2, $3, $4, $5)
-       RETURNING id, client_id, flow_id, title, message, position, created_at`,
-      [req.clientId, flowId, title, message, pos]
+      `INSERT INTO public.flow_steps (
+         client_id, flow_id, title, message, type,
+         next_step_id, condition_true_id, condition_false_id,
+         position
+       )
+       VALUES ($1,$2,$3,$4,$5,$6,$7,$8,$9)
+       RETURNING
+         id, client_id, flow_id,
+         title, message, type,
+         next_step_id, condition_true_id, condition_false_id,
+         position, created_at`,
+      [
+        req.clientId,
+        flowId,
+        title,
+        // ✅ para condition/wait pode ser null
+        type === 'message' ? message : message,
+        type,
+        nextStepId,
+        conditionTrueId,
+        conditionFalseId,
+        pos
+      ]
     )
 
     return res.json({ ok: true, data: rows[0] })
@@ -265,23 +343,122 @@ router.put('/steps/:id', requireClientId, async (req, res) => {
     const hasMessage = req.body?.message !== undefined
     const hasPosition = req.body?.position !== undefined
 
-    if (!hasTitle && !hasMessage && !hasPosition) {
+    const hasType = req.body?.type !== undefined
+    const hasNext = req.body?.next_step_id !== undefined
+    const hasTrue = req.body?.condition_true_id !== undefined
+    const hasFalse = req.body?.condition_false_id !== undefined
+
+    if (!hasTitle && !hasMessage && !hasPosition && !hasType && !hasNext && !hasTrue && !hasFalse) {
       return res.status(400).json({ ok: false, error: 'nothing_to_update' })
     }
+
+    // 🔎 pega dados atuais (para validar mudança de tipo e refs no mesmo fluxo)
+    const stepInfo = await pool.query(
+      `SELECT id, flow_id, type, message
+       FROM public.flow_steps
+       WHERE client_id = $1 AND id = $2
+       LIMIT 1`,
+      [req.clientId, id]
+    )
+    if (!stepInfo.rows[0]) return res.status(404).json({ ok: false, error: 'step_not_found' })
+
+    const flowId = Number(stepInfo.rows[0].flow_id)
+    const currentType = normalizeStepType(stepInfo.rows[0].type)
+    const currentMessage = toTextOrNull(stepInfo.rows[0].message)
 
     const titleVal = hasTitle ? toTextOrNull(req.body?.title) : null
     const messageVal = hasMessage ? toTextOrNull(req.body?.message) : null
     const posVal = hasPosition ? toPosIntOrNull(req.body?.position) : null
 
+    const typeVal = hasType ? toStepTypeOrNull(req.body?.type) : null
+    if (hasType && !typeVal) return res.status(400).json({ ok: false, error: 'type_invalid' })
+
+    const nextVal = hasNext ? toIdOrNull(req.body?.next_step_id) : null
+    const trueVal = hasTrue ? toIdOrNull(req.body?.condition_true_id) : null
+    const falseVal = hasFalse ? toIdOrNull(req.body?.condition_false_id) : null
+
+    // ✅ null explícito para limpar campos (ex: next_step_id: null)
+    const willSetNextNull =
+      hasNext && (req.body?.next_step_id === null || String(req.body?.next_step_id).trim() === '')
+    const willSetTrueNull =
+      hasTrue && (req.body?.condition_true_id === null || String(req.body?.condition_true_id).trim() === '')
+    const willSetFalseNull =
+      hasFalse && (req.body?.condition_false_id === null || String(req.body?.condition_false_id).trim() === '')
+
+    // ✅ evita self-reference
+    if (hasNext && nextVal && nextVal === id) return res.status(400).json({ ok: false, error: 'next_step_invalid' })
+    if (hasTrue && trueVal && trueVal === id)
+      return res.status(400).json({ ok: false, error: 'condition_true_invalid' })
+    if (hasFalse && falseVal && falseVal === id)
+      return res.status(400).json({ ok: false, error: 'condition_false_invalid' })
+
+    // ✅ valida referências (mesmo flow + client)
+    if (hasNext && !willSetNextNull && nextVal) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, nextVal)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'next_step_not_found' })
+    }
+    if (hasTrue && !willSetTrueNull && trueVal) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, trueVal)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'condition_true_not_found' })
+    }
+    if (hasFalse && !willSetFalseNull && falseVal) {
+      const okRef = await ensureStepBelongsToClientAndFlow(req.clientId, flowId, falseVal)
+      if (!okRef) return res.status(404).json({ ok: false, error: 'condition_false_not_found' })
+    }
+
+    // ✅ valida regra: se virar "message", precisa ter message final
+    const nextType = hasType ? normalizeStepType(typeVal) : currentType
+
+    // message final será:
+    // - se veio no body: messageVal (pode ser null para limpar)
+    // - senão: mantém currentMessage
+    const finalMessage = hasMessage ? messageVal : currentMessage
+
+    if (nextType === 'message' && !finalMessage) {
+      return res.status(400).json({ ok: false, error: 'message_required' })
+    }
+
     const { rows } = await pool.query(
       `UPDATE public.flow_steps
        SET
          title = COALESCE($3, title),
-         message = COALESCE($4, message),
-         position = COALESCE($5, position)
+         message = CASE WHEN $4 THEN $5 ELSE message END,
+         type = COALESCE($6, type),
+
+         next_step_id = CASE WHEN $7 THEN NULL ELSE COALESCE($8, next_step_id) END,
+         condition_true_id = CASE WHEN $9 THEN NULL ELSE COALESCE($10, condition_true_id) END,
+         condition_false_id = CASE WHEN $11 THEN NULL ELSE COALESCE($12, condition_false_id) END,
+
+         position = COALESCE($13, position)
        WHERE client_id = $1 AND id = $2
-       RETURNING id, client_id, flow_id, title, message, position, created_at`,
-      [req.clientId, id, titleVal, messageVal, posVal]
+       RETURNING
+         id, client_id, flow_id,
+         title, message, type,
+         next_step_id, condition_true_id, condition_false_id,
+         position, created_at`,
+      [
+        req.clientId,
+        id,
+
+        titleVal,
+
+        // message: set explícito só quando veio no body (permite limpar com null)
+        hasMessage,
+        messageVal,
+
+        typeVal,
+
+        willSetNextNull,
+        nextVal,
+
+        willSetTrueNull,
+        trueVal,
+
+        willSetFalseNull,
+        falseVal,
+
+        posVal
+      ]
     )
 
     if (!rows[0]) return res.status(404).json({ ok: false, error: 'step_not_found' })

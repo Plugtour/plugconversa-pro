@@ -271,6 +271,25 @@
   flex: 0 0 auto;
 }
 
+/* 🔹 variações por tipo */
+.pcFluxoStepBadge[data-type='message'] {
+  background: #eef2ff;
+  border-color: #c7d2fe;
+  color: #3730a3;
+}
+
+.pcFluxoStepBadge[data-type='condition'] {
+  background: #fef3c7;
+  border-color: #fde68a;
+  color: #92400e;
+}
+
+.pcFluxoStepBadge[data-type='wait'] {
+  background: #e0f2fe;
+  border-color: #bae6fd;
+  color: #075985;
+}
+
 .pcFluxoStepMeta {
   font-size: 12px;
   color: #6b7280;

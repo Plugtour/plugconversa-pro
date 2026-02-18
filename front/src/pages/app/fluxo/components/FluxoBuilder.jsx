@@ -4,9 +4,7 @@ import { apiDel, apiGet, apiPost, apiPut } from '../../../../services/api'
 import '../fluxo.css'
 
 import { DndContext, closestCenter, PointerSensor, useSensor, useSensors, DragOverlay } from '@dnd-kit/core'
-
 import { SortableContext, useSortable, arrayMove, verticalListSortingStrategy } from '@dnd-kit/sortable'
-
 import { CSS } from '@dnd-kit/utilities'
 
 function formatDateBR(v) {
@@ -14,6 +12,19 @@ function formatDateBR(v) {
   const d = new Date(v)
   if (Number.isNaN(d.getTime())) return ''
   return d.toLocaleDateString()
+}
+
+function getStepTypeLabel(type) {
+  const t = String(type || 'message').toLowerCase()
+  if (t === 'condition') return 'Condição'
+  if (t === 'wait') return 'Espera'
+  return 'Mensagem'
+}
+
+function normalizeStepType(type) {
+  const t = String(type || '').trim().toLowerCase()
+  if (t === 'message' || t === 'condition' || t === 'wait') return t
+  return 'message'
 }
 
 function Modal({ open, title, children, onClose }) {
@@ -51,50 +62,47 @@ function Modal({ open, title, children, onClose }) {
   )
 }
 
-function StepForm({
-  mode,
-  initial,
-  canInteract,
-  onCancel,
-  onSubmit
-}) {
-  const [type, setType] = useState(initial?.type || 'message')
+function StepForm({ mode, initial, canInteract, onCancel, onSubmit }) {
+  const [type, setType] = useState(normalizeStepType(initial?.type || 'message'))
   const [title, setTitle] = useState(initial?.title || '')
   const [message, setMessage] = useState(initial?.message || '')
 
   useEffect(() => {
-    setType(initial?.type || 'message')
+    setType(normalizeStepType(initial?.type || 'message'))
     setTitle(initial?.title || '')
     setMessage(initial?.message || '')
   }, [initial])
 
   const disabled = !canInteract
 
+  const titleOk = !!String(title).trim()
+  const typeNorm = normalizeStepType(type)
+  const messageOk = typeNorm === 'message' ? !!String(message).trim() : true
+
   function submit(e) {
     e.preventDefault()
     const t = String(title || '').trim()
     const m = String(message || '').trim()
-    if (!t || !m) return
-    onSubmit?.({ type, title: t, message: m })
+
+    if (!t) return
+    if (typeNorm === 'message' && !m) return
+
+    onSubmit?.({
+      type: typeNorm,
+      title: t,
+      // ✅ condition/wait podem salvar sem mensagem
+      message: typeNorm === 'message' ? m : m || null
+    })
   }
 
   return (
     <form onSubmit={submit} className="pcFluxoForm">
       <label className="pcFluxoField">
         <span className="pcFluxoLabel">Tipo</span>
-        <select
-          className="pcFluxoSelect"
-          value={type}
-          onChange={(e) => setType(e.target.value)}
-          disabled={disabled}
-        >
+        <select className="pcFluxoSelect" value={type} onChange={(e) => setType(e.target.value)} disabled={disabled}>
           <option value="message">Mensagem</option>
-          <option value="condition" disabled>
-            Condição (em breve)
-          </option>
-          <option value="wait" disabled>
-            Espera (em breve)
-          </option>
+          <option value="condition">Condição</option>
+          <option value="wait">Espera</option>
         </select>
       </label>
 
@@ -116,7 +124,7 @@ function StepForm({
           className="pcFluxoTextarea"
           value={message}
           onChange={(e) => setMessage(e.target.value)}
-          placeholder="Digite a mensagem que será enviada..."
+          placeholder={typeNorm === 'message' ? 'Digite a mensagem que será enviada...' : 'Opcional para este tipo'}
           rows={5}
           disabled={disabled}
         />
@@ -126,7 +134,7 @@ function StepForm({
         <button className="pcBtnGhost" type="button" onClick={onCancel} disabled={disabled}>
           Cancelar
         </button>
-        <button className="pcBtnPrimary" type="submit" disabled={disabled || !String(title).trim() || !String(message).trim()}>
+        <button className="pcBtnPrimary" type="submit" disabled={disabled || !titleOk || !messageOk}>
           {mode === 'edit' ? 'Salvar' : 'Criar etapa'}
         </button>
       </div>
@@ -143,6 +151,10 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
     opacity: isDragging ? 0.55 : 1
   }
 
+  const type = normalizeStepType(etapa?.type)
+  const label = getStepTypeLabel(type)
+  const badgeTitle = `Tipo: ${label}`
+
   return (
     <div ref={setNodeRef} className="pcFluxoStepWrap" style={style}>
       <div className="pcFluxoStepRail" aria-hidden="true">
@@ -154,13 +166,7 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
       <div className="pcFluxoCard pcFluxoStepCard" title="Arraste para reordenar">
         <div className="pcFluxoStepTop">
           <div className="pcFluxoStepTopLeft">
-            <span
-              className="pcFluxoDrag"
-              {...attributes}
-              {...listeners}
-              aria-label="Arrastar"
-              title="Arrastar"
-            >
+            <span className="pcFluxoDrag" {...attributes} {...listeners} aria-label="Arrastar" title="Arrastar">
               ⋮⋮
             </span>
 
@@ -169,8 +175,8 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
                 <strong className="pcFluxoStepTitle" title={etapa.title}>
                   {etapa.title}
                 </strong>
-                <span className="pcFluxoStepBadge" title="Tipo: Mensagem">
-                  Mensagem
+                <span className="pcFluxoStepBadge" data-type={type} title={badgeTitle}>
+                  {label}
                 </span>
               </div>
 
@@ -189,7 +195,7 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
         </div>
 
         <div className="pcFluxoStepBody">
-          <div className="pcFluxoStepMsg">{etapa.message}</div>
+          <div className="pcFluxoStepMsg">{etapa.message || (type !== 'message' ? '—' : '')}</div>
           <div className="pcFluxoStepFooter">Criado em {formatDateBR(etapa.created_at) || '-'}</div>
         </div>
       </div>
@@ -198,6 +204,10 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
 }
 
 function OverlayStepCard({ etapa }) {
+  const type = normalizeStepType(etapa?.type)
+  const label = getStepTypeLabel(type)
+  const badgeTitle = `Tipo: ${label}`
+
   return (
     <div className="pcFluxoCard pcFluxoCardOverlay pcFluxoStepCard">
       <div className="pcFluxoStepTop">
@@ -211,8 +221,8 @@ function OverlayStepCard({ etapa }) {
               <strong className="pcFluxoStepTitle" title={etapa.title}>
                 {etapa.title}
               </strong>
-              <span className="pcFluxoStepBadge" title="Tipo: Mensagem">
-                Mensagem
+              <span className="pcFluxoStepBadge" data-type={type} title={badgeTitle}>
+                {label}
               </span>
             </div>
 
@@ -231,7 +241,7 @@ function OverlayStepCard({ etapa }) {
       </div>
 
       <div className="pcFluxoStepBody">
-        <div className="pcFluxoStepMsg">{etapa.message}</div>
+        <div className="pcFluxoStepMsg">{etapa.message || (type !== 'message' ? '—' : '')}</div>
         <div className="pcFluxoStepFooter">Criado em {formatDateBR(etapa.created_at) || '-'}</div>
       </div>
     </div>
@@ -301,11 +311,19 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
 
       if (modalMode === 'create') {
         const pos = etapasRef.current.length
-        // por enquanto o backend não tem campo "type" — mantemos só no UI
-        await apiPost(`/flow/${flowId}/steps`, { title: payload.title, message: payload.message, position: pos })
+        await apiPost(`/flow/${flowId}/steps`, {
+          type: normalizeStepType(payload.type),
+          title: payload.title,
+          message: payload.message,
+          position: pos
+        })
       } else {
         if (!modalEtapa?.id) return
-        await apiPut(`/flow/steps/${modalEtapa.id}`, { title: payload.title, message: payload.message })
+        await apiPut(`/flow/steps/${modalEtapa.id}`, {
+          type: normalizeStepType(payload.type),
+          title: payload.title,
+          message: payload.message
+        })
       }
 
       await carregarEtapas()
@@ -430,16 +448,16 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
         </DndContext>
       )}
 
-      <Modal
-        open={modalOpen}
-        title={modalMode === 'edit' ? 'Editar etapa' : 'Nova etapa'}
-        onClose={fecharModal}
-      >
+      <Modal open={modalOpen} title={modalMode === 'edit' ? 'Editar etapa' : 'Nova etapa'} onClose={fecharModal}>
         <StepForm
           mode={modalMode}
           initial={
             modalMode === 'edit'
-              ? { type: 'message', title: modalEtapa?.title || '', message: modalEtapa?.message || '' }
+              ? {
+                  type: normalizeStepType(modalEtapa?.type || 'message'),
+                  title: modalEtapa?.title || '',
+                  message: modalEtapa?.message || ''
+                }
               : { type: 'message', title: '', message: '' }
           }
           canInteract={!saving}
