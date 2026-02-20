@@ -24,26 +24,42 @@
 }
 
 .pcBtnPrimary:hover {
-  opacity: 0.9;
+  opacity: 0.92;
 }
 
-/* botão mini */
+/* botão mini (⋯) */
 
 .pcBtnMini {
   background: transparent;
-  border: none;
-  font-size: 14px;
+  border: 1px solid transparent;
+  font-size: 16px;
   cursor: pointer;
-  color: #999;
+  color: #9ca3af;
   padding: 2px 6px;
-  border-radius: 6px;
-  transition: 0.2s;
+  border-radius: 8px;
+  transition: 0.15s;
   line-height: 1;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 28px;
+  height: 26px;
 }
 
 .pcBtnMini:hover {
   background: #f3f4f6;
-  color: #ef4444;
+  border-color: #e5e7eb;
+  color: #6b7280;
+}
+
+.pcBtnMini:active {
+  transform: translateY(0.5px);
+}
+
+.pcBtnMini:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
 }
 
 /* botão ghost (modal) */
@@ -88,6 +104,7 @@
   gap: 6px;
   cursor: pointer;
   transition: 0.18s;
+  position: relative;
 }
 
 .pcFluxoCard:hover {
@@ -142,6 +159,91 @@
 /* suaviza reordenação */
 .pcFluxoGridSteps .pcFluxoCard {
   will-change: transform;
+}
+
+/* =========================
+   MENU (⋯)
+========================= */
+
+.pcFluxoMenu {
+  overflow: hidden;
+  animation: pcFluxoMenuIn 0.14s ease-out;
+  transform-origin: top right;
+}
+
+@keyframes pcFluxoMenuIn {
+  from {
+    opacity: 0;
+    transform: scale(0.98) translateY(-4px);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1) translateY(0);
+  }
+}
+
+/* ✅ painel do menu (substitui inline) */
+.pcFluxoMenuPanel {
+  position: absolute;
+  top: 44px;
+  right: 10px;
+  z-index: 50;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.14);
+  padding: 6px;
+  min-width: 180px;
+}
+
+.pcFluxoMenuPanelFlow {
+  min-width: 200px;
+}
+
+.pcFluxoMenuPanelFolder {
+  min-width: 180px;
+}
+
+.pcFluxoMenuItem {
+  display: block;
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: transparent;
+  cursor: pointer;
+  transition: 0.12s;
+  color: #111;
+
+  padding: 10px 10px;
+  border-radius: 10px;
+  font-size: 13px;
+}
+
+.pcFluxoMenuItem:hover {
+  background: #f3f4f6;
+}
+
+.pcFluxoMenuItem:active {
+  transform: translateY(0.5px);
+}
+
+.pcFluxoMenuItem:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
+.pcFluxoMenuItemDanger {
+  color: #ef4444;
+}
+
+.pcFluxoMenuItemDanger:hover {
+  background: rgba(239, 68, 68, 0.08);
+}
+
+.pcFluxoMenuDivider {
+  height: 1px;
+  background: #eef2f7;
+  margin: 6px 6px;
 }
 
 /* =========================
@@ -271,7 +373,7 @@
   flex: 0 0 auto;
 }
 
-/* 🔹 variações por tipo */
+/* variações por tipo */
 .pcFluxoStepBadge[data-type='message'] {
   background: #eef2ff;
   border-color: #c7d2fe;

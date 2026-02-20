@@ -27,6 +27,26 @@ function normalizeStepType(type) {
   return 'message'
 }
 
+function sortSteps(list) {
+  const arr = Array.isArray(list) ? [...list] : []
+  arr.sort((a, b) => {
+    const pa = Number(a?.position)
+    const pb = Number(b?.position)
+    const hasPa = Number.isFinite(pa)
+    const hasPb = Number.isFinite(pb)
+    if (hasPa && hasPb && pa !== pb) return pa - pb
+    if (hasPa && !hasPb) return -1
+    if (!hasPa && hasPb) return 1
+
+    const da = new Date(a?.created_at || 0).getTime()
+    const db = new Date(b?.created_at || 0).getTime()
+    if (Number.isFinite(da) && Number.isFinite(db) && da !== db) return da - db
+
+    return Number(a?.id || 0) - Number(b?.id || 0)
+  })
+  return arr
+}
+
 function Modal({ open, title, children, onClose }) {
   useEffect(() => {
     if (!open) return
@@ -142,8 +162,10 @@ function StepForm({ mode, initial, canInteract, onCancel, onSubmit }) {
   )
 }
 
-function SortableStepCard({ etapa, index, onEdit, onDelete }) {
-  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: etapa.id })
+function SortableStepCard({ etapa, index, isLast, onEdit, onDelete }) {
+  // ✅ usa id como string para evitar mismatch number/string no dnd-kit
+  const stepKey = String(etapa.id)
+  const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: stepKey })
 
   const style = {
     transform: CSS.Transform.toString(transform),
@@ -160,7 +182,7 @@ function SortableStepCard({ etapa, index, onEdit, onDelete }) {
       <div className="pcFluxoStepRail" aria-hidden="true">
         <div className="pcFluxoStepDot" />
         {index !== 0 && <div className="pcFluxoStepLineTop" />}
-        <div className="pcFluxoStepLineBottom" />
+        {!isLast && <div className="pcFluxoStepLineBottom" />}
       </div>
 
       <div className="pcFluxoCard pcFluxoStepCard" title="Arraste para reordenar">
@@ -259,6 +281,9 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
   const [modalEtapa, setModalEtapa] = useState(null)
   const [saving, setSaving] = useState(false)
 
+  // ✅ evita setState após unmount / troca de fluxo rápida
+  const mountedRef = useRef(false)
+
   const etapasRef = useRef([])
   useEffect(() => {
     etapasRef.current = etapas
@@ -266,22 +291,29 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
 
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
 
-  async function carregarEtapas() {
+  async function carregarEtapas({ silent = false } = {}) {
     if (!flowId) return
     try {
       setLoading(true)
       const res = await apiGet(`/flow/${flowId}/steps`)
-      setEtapas(res?.data || [])
+      if (!mountedRef.current) return
+      setEtapas(sortSteps(res?.data || []))
     } catch (err) {
       console.error(err)
-      alert('Erro ao carregar etapas')
+      if (!silent) alert('Erro ao carregar etapas')
+      if (!mountedRef.current) return
+      setEtapas([])
     } finally {
-      setLoading(false)
+      if (mountedRef.current) setLoading(false)
     }
   }
 
   useEffect(() => {
+    mountedRef.current = true
     carregarEtapas()
+    return () => {
+      mountedRef.current = false
+    }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [flowId])
 
@@ -326,7 +358,7 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
         })
       }
 
-      await carregarEtapas()
+      await carregarEtapas({ silent: true })
       setModalOpen(false)
       setModalEtapa(null)
     } catch (err) {
@@ -343,7 +375,7 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
 
     try {
       await apiDel(`/flow/steps/${etapa.id}`)
-      await carregarEtapas()
+      await carregarEtapas({ silent: true })
     } catch (err) {
       console.error(err)
       alert('Erro ao excluir etapa')
@@ -373,7 +405,7 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
       await Promise.all(updates.map((u) => apiPut(`/flow/steps/${u.id}`, { position: u.position })))
     } catch (err) {
       console.error(err)
-      await carregarEtapas()
+      await carregarEtapas({ silent: true })
       alert('Erro ao salvar nova ordem')
     }
   }
@@ -387,8 +419,8 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
     if (!active || !over || active === over) return
 
     const current = etapasRef.current
-    const oldIndex = current.findIndex((x) => x.id === active)
-    const newIndex = current.findIndex((x) => x.id === over)
+    const oldIndex = current.findIndex((x) => String(x.id) === String(active))
+    const newIndex = current.findIndex((x) => String(x.id) === String(over))
     if (oldIndex < 0 || newIndex < 0) return
 
     const next = arrayMove(current, oldIndex, newIndex).map((s, idx) => ({
@@ -400,7 +432,10 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
     await persistPositions(next)
   }
 
-  const activeStep = useMemo(() => etapas.find((e) => e.id === activeId) || null, [activeId, etapas])
+  const activeStep = useMemo(
+    () => etapas.find((e) => String(e.id) === String(activeId)) || null,
+    [activeId, etapas]
+  )
 
   return (
     <div className="pcFluxoBuilder">
@@ -430,13 +465,14 @@ export default function FluxoBuilder({ fluxo, onVoltar }) {
           onDragCancel={onDragCancel}
           onDragEnd={onDragEnd}
         >
-          <SortableContext items={etapas.map((e) => e.id)} strategy={verticalListSortingStrategy}>
+          <SortableContext items={etapas.map((e) => String(e.id))} strategy={verticalListSortingStrategy}>
             <div className="pcFluxoTimeline">
               {etapas.map((etapa, idx) => (
                 <SortableStepCard
                   key={etapa.id}
                   etapa={etapa}
                   index={idx}
+                  isLast={idx === etapas.length - 1}
                   onEdit={abrirEditar}
                   onDelete={handleExcluirEtapa}
                 />
