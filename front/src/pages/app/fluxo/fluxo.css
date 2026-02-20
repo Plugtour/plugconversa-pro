@@ -28,13 +28,13 @@
 }
 
 /* botão mini (⋯) */
-
 .pcBtnMini {
   background: transparent;
   border: 1px solid transparent;
-  font-size: 16px;
+  font-size: 18px;
+  font-weight: 800;
   cursor: pointer;
-  color: #9ca3af;
+  color: #6b7280;
   padding: 2px 6px;
   border-radius: 8px;
   transition: 0.15s;
@@ -50,7 +50,7 @@
 .pcBtnMini:hover {
   background: #f3f4f6;
   border-color: #e5e7eb;
-  color: #6b7280;
+  color: #374151;
 }
 
 .pcBtnMini:active {
@@ -95,8 +95,8 @@
 /* ===== Cards ===== */
 
 .pcFluxoCard {
-  padding: 16px;
-  border-radius: 12px;
+  padding: 14px 16px;
+  border-radius: 10px;
   border: 1px solid #e5e7eb;
   background: #fff;
   display: flex;
@@ -119,46 +119,124 @@
 }
 
 .pcFluxoCard span {
-  font-size: 12px;
+  font-size: 14px;
   color: #777;
   line-height: 1.3;
 }
 
-/* overlay do drag */
-.pcFluxoCardOverlay {
-  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.18);
-  border-color: #cbd5e1;
-  cursor: grabbing;
+/* =========================
+   Pastas (3 linhas)
+========================= */
+
+.pcFluxoFolderTopRow {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 10px;
 }
 
-/* handle drag */
-.pcFluxoDrag {
+.pcFluxoFolderName {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcFluxoFolderCountRow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-top: 6px;
+}
+
+.pcFluxoFolderCountLabel {
+  font-size: 12px;
+  font-weight: 400;
+  color: #6b7280;
+}
+
+.pcFluxoCountBadge {
+  width: 22px;
+  height: 22px;
+  border-radius: 999px;
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  width: 28px;
-  height: 26px;
-  border-radius: 8px;
-  border: 1px solid #e5e7eb;
-  background: #f8fafc;
+
+  background: #e5e7eb;
+  border: 1px solid #d1d5db;
+  color: #111827;
+
+  font-size: 12px;
+  font-weight: 700;
+  line-height: 1;
+}
+
+.pcFluxoFolderFooter {
+  margin-top: 5px;
+  padding-top: 5px;
+}
+
+/* =========================
+   Card de Fluxo: handle lateral (altura total)
+========================= */
+
+.pcFluxoFlowCardDraggable {
+  padding-left: 52px; /* espaço para a barra */
+}
+
+.pcFluxoDragBar {
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 33px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #cccccc;
+  border-right: 1px solid #e5e7eb;
+
   color: #6b7280;
+  font-size: 14px;
+  font-weight: 800;
+  letter-spacing: 1px;
+
   user-select: none;
   cursor: grab;
-  flex: 0 0 auto;
+
+  border-top-left-radius: 10px;
+  border-bottom-left-radius: 10px;
 }
 
-.pcFluxoDrag:hover {
-  border-color: #cbd5e1;
-  background: #f1f5f9;
+.pcFluxoDragBar:hover {
+  background: #777777;
+  color: #ffffff;
 }
 
-.pcFluxoDrag:active {
+.pcFluxoDragBar:active {
   cursor: grabbing;
 }
 
-/* suaviza reordenação */
-.pcFluxoGridSteps .pcFluxoCard {
-  will-change: transform;
+/* =========================
+   NOVO: DROP TARGET (pastas)
+========================= */
+
+.pcFluxoDropTarget {
+  transition: border-color 0.15s, box-shadow 0.15s, background 0.15s, transform 0.08s;
+}
+
+.pcFluxoDropTargetOver {
+  border-color: #2563eb !important;
+  background: #f0f7ff;
+  box-shadow: 0 0 0 2px rgba(37, 99, 235, 0.15);
+  transform: translateY(-1px);
+}
+
+.pcFluxoDropTargetOver strong {
+  color: #1d4ed8;
 }
 
 /* =========================
@@ -182,7 +260,6 @@
   }
 }
 
-/* ✅ painel do menu (substitui inline) */
 .pcFluxoMenuPanel {
   position: absolute;
   top: 44px;
@@ -373,7 +450,6 @@
   flex: 0 0 auto;
 }
 
-/* variações por tipo */
 .pcFluxoStepBadge[data-type='message'] {
   background: #eef2ff;
   border-color: #c7d2fe;
@@ -527,6 +603,14 @@
 
   .pcFluxoStepDot {
     margin-top: 18px;
+  }
+
+  .pcFluxoFlowCardDraggable {
+    padding-left: 48px;
+  }
+
+  .pcFluxoDragBar {
+    width: 32px;
   }
 }
 
