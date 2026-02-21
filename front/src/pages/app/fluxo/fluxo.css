@@ -78,6 +78,34 @@
   background: #e5e7eb;
 }
 
+/* ✅ botão danger (modal confirmar excluir) */
+.pcBtnDanger {
+  background: #ef4444;
+  color: #fff;
+  border: none;
+  padding: 8px 14px;
+  border-radius: 8px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.pcBtnDanger:hover {
+  opacity: 0.92;
+}
+
+.pcBtnDanger:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.18);
+}
+
+.pcBtnPrimary:disabled,
+.pcBtnGhost:disabled,
+.pcBtnDanger:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
 /* ===== Grid ===== */
 
 .pcFluxoGrid {
@@ -196,7 +224,7 @@
   align-items: center;
   justify-content: center;
 
-  background: #cccccc;
+  background: #cccccc; /* ✅ mais suave */
   border-right: 1px solid #e5e7eb;
 
   color: #6b7280;
@@ -212,7 +240,7 @@
 }
 
 .pcFluxoDragBar:hover {
-  background: #777777;
+  background: #333333;
   color: #ffffff;
 }
 
@@ -499,7 +527,7 @@
 }
 
 /* =========================
-   MODAL (edição/criação)
+   MODAL (FlowActionModal)
 ========================= */
 
 .pcFluxoModalBackdrop {
@@ -512,6 +540,16 @@
   display: grid;
   place-items: center;
   padding: 18px;
+  animation: pcFluxoBackdropIn 0.14s ease-out;
+}
+
+@keyframes pcFluxoBackdropIn {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
 }
 
 .pcFluxoModal {
@@ -521,6 +559,19 @@
   border-radius: 14px;
   box-shadow: 0 20px 60px rgba(0, 0, 0, 0.22);
   overflow: hidden;
+  animation: pcFluxoModalIn 0.16s ease-out;
+  transform-origin: center;
+}
+
+@keyframes pcFluxoModalIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
 }
 
 .pcFluxoModalHeader {
@@ -538,8 +589,41 @@
   color: #111;
 }
 
+.pcFluxoModalClose {
+  width: 30px;
+  height: 28px;
+  border-radius: 10px;
+  border: 1px solid transparent;
+  background: transparent;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: #6b7280;
+  transition: 0.15s;
+}
+
+.pcFluxoModalClose:hover {
+  background: #f3f4f6;
+  border-color: #e5e7eb;
+  color: #374151;
+}
+
+.pcFluxoModalClose:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+}
+
 .pcFluxoModalBody {
   padding: 14px;
+}
+
+.pcFluxoModalDesc {
+  font-size: 13px;
+  color: #374151;
+  line-height: 1.45;
+  white-space: pre-line; /* ✅ para textos com \n no confirm */
+  margin-bottom: 10px;
 }
 
 .pcFluxoForm {
@@ -588,6 +672,146 @@
   display: flex;
   justify-content: flex-end;
   gap: 10px;
+}
+
+/* =========================
+   LISTA DE PASTAS (Copiar/Mover)
+========================= */
+
+.pcFluxoFolderPicker {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcFluxoFolderPickerHint {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.35;
+  margin-top: -2px;
+}
+
+.pcFluxoFolderList {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  max-height: min(380px, 56vh);
+  overflow: auto;
+  padding-right: 4px;
+}
+
+.pcFluxoFolderList::-webkit-scrollbar {
+  width: 10px;
+}
+.pcFluxoFolderList::-webkit-scrollbar-thumb {
+  background: #e5e7eb;
+  border-radius: 999px;
+  border: 2px solid #fff;
+}
+.pcFluxoFolderList::-webkit-scrollbar-thumb:hover {
+  background: #d1d5db;
+}
+
+.pcFluxoFolderOption {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  border-radius: 12px;
+  padding: 12px 12px;
+
+  display: flex;
+  align-items: center;
+  gap: 12px;
+
+  cursor: pointer;
+  transition: 0.14s;
+  text-align: left;
+}
+
+.pcFluxoFolderOption:hover {
+  border-color: #2563eb;
+  box-shadow: 0 10px 26px rgba(0, 0, 0, 0.06);
+  transform: translateY(-0.5px);
+}
+
+.pcFluxoFolderOption:active {
+  transform: translateY(0px);
+}
+
+.pcFluxoFolderOption:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 4px rgba(37, 99, 235, 0.14);
+}
+
+.pcFluxoFolderOptionIcon {
+  width: 34px;
+  height: 34px;
+  border-radius: 10px;
+  border: 1px solid #e5e7eb;
+  background: #f8fafc;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex: 0 0 auto;
+
+  font-size: 16px;
+  color: #111827;
+}
+
+.pcFluxoFolderOptionMain {
+  min-width: 0;
+  flex: 1 1 auto;
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+}
+
+.pcFluxoFolderOptionTitle {
+  font-size: 13px;
+  font-weight: 700;
+  color: #111;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcFluxoFolderOptionSub {
+  font-size: 12px;
+  color: #6b7280;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.pcFluxoFolderOptionCheck {
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  border: 2px solid #d1d5db;
+  background: #fff;
+  flex: 0 0 auto;
+  transition: 0.14s;
+}
+
+.pcFluxoFolderOptionSelected {
+  border-color: #2563eb;
+  background: #f0f7ff;
+}
+
+.pcFluxoFolderOptionSelected .pcFluxoFolderOptionIcon {
+  border-color: #c7d2fe;
+  background: #eef2ff;
+}
+
+.pcFluxoFolderOptionSelected .pcFluxoFolderOptionCheck {
+  border-color: #2563eb;
+  box-shadow: inset 0 0 0 5px #2563eb;
+}
+
+.pcFluxoFolderOptionRoot .pcFluxoFolderOptionIcon {
+  background: #f3f4f6;
 }
 
 /* responsivo */

@@ -2,6 +2,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { apiDel, apiGet, apiPost, apiPut } from '../../../services/api'
 import FluxoBuilder from './components/FluxoBuilder.jsx'
+import FlowActionModal from './components/FlowActionModal.jsx'
 import './fluxo.css'
 
 import { DndContext, PointerSensor, useSensor, useSensors } from '@dnd-kit/core'
@@ -58,24 +59,16 @@ function FolderDropCard({
 
   return (
     <div ref={setNodeRef} className={cls} onClick={onEnter} style={{ position: 'relative' }}>
-      {/* Linha 1: Nome + menu */}
       <div className="pcFluxoFolderTopRow">
         <strong title={pasta.name} className="pcFluxoFolderName">
           {pasta.name}
         </strong>
 
-        <button
-          className="pcBtnMini"
-          type="button"
-          onClick={onToggleMenu}
-          title="Mais opções"
-          aria-label="Mais opções"
-        >
+        <button className="pcBtnMini" type="button" onClick={onToggleMenu} title="Mais opções" aria-label="Mais opções">
           ⋮
         </button>
       </div>
 
-      {/* Linha 2: Label + badge (badge alinhado do lado oposto) */}
       <div className="pcFluxoFolderCountRow">
         <span className="pcFluxoFolderCountLabel">Quantidade de Fluxos</span>
         <span className="pcFluxoCountBadge" title={`${count} fluxo(s)`}>
@@ -83,7 +76,6 @@ function FolderDropCard({
         </span>
       </div>
 
-      {/* Linha 3: Data (tipo “rodapé”) */}
       <div className="pcFluxoFolderFooter">
         <span>{dLabel ? `Criado em ${dLabel}` : ''}</span>
       </div>
@@ -137,7 +129,6 @@ function FlowDraggableCard({
 
   return (
     <div ref={setNodeRef} className={cls} onClick={onOpen} style={{ position: 'relative', ...style }}>
-      {/* handle do drag (altura total, encostado na lateral) */}
       {dragEnabled && (
         <span
           className="pcFluxoDragBar"
@@ -155,15 +146,7 @@ function FlowDraggableCard({
       )}
 
       <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-        <div
-          style={{
-            minWidth: 0,
-            flex: '1 1 auto',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 6
-          }}
-        >
+        <div style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
           <strong title={fluxo.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
             {fluxo.name}
           </strong>
@@ -210,21 +193,48 @@ export default function Fluxo() {
   const [pastaAtual, setPastaAtual] = useState(null)
   const [fluxoAtual, setFluxoAtual] = useState(null)
 
-  // ✅ menu ⋯ (pastas e fluxos)
-  const [menu, setMenu] = useState({
-    open: false,
-    type: null, // 'folder' | 'flow'
-    id: null
-  })
+  const [menu, setMenu] = useState({ open: false, type: null, id: null })
   const menuRef = useRef(null)
 
-  // ✅ evita alert duplicado no React StrictMode (DEV) e evita setState após unmount
   const didInitRef = useRef(false)
   const mountedRef = useRef(false)
 
-  // ✅ arrasta-e-solta (novo, só do Fluxo)
   const [dragBusy, setDragBusy] = useState(false)
   const dragBusyRef = useRef(false)
+
+  // ✅ modal criar pasta (NOVO)
+  const [createFolderModalOpen, setCreateFolderModalOpen] = useState(false)
+  const [createFolderBusy, setCreateFolderBusy] = useState(false)
+
+  // ✅ modal criar fluxo (NOVO)
+  const [createFlowModalOpen, setCreateFlowModalOpen] = useState(false)
+  const [createFlowSelectedFolderId, setCreateFlowSelectedFolderId] = useState(null)
+  const [createFlowBusy, setCreateFlowBusy] = useState(false)
+
+  // ✅ modal copiar
+  const [copyModalOpen, setCopyModalOpen] = useState(false)
+  const [copyFlow, setCopyFlow] = useState(null)
+  const [copySelectedFolderId, setCopySelectedFolderId] = useState(null)
+  const [copyBusy, setCopyBusy] = useState(false)
+
+  // ✅ modal mover (novo)
+  const [moveModalOpen, setMoveModalOpen] = useState(false)
+  const [moveFlow, setMoveFlow] = useState(null)
+  const [moveSelectedFolderId, setMoveSelectedFolderId] = useState(null)
+  const [moveBusy, setMoveBusy] = useState(false)
+
+  // ✅ modais padrão (renomear/copiar/excluir pasta, renomear/excluir fluxo)
+  const [renameModalOpen, setRenameModalOpen] = useState(false)
+  const [renameTarget, setRenameTarget] = useState(null) // { type: 'folder'|'flow', item }
+  const [renameBusy, setRenameBusy] = useState(false)
+
+  const [deleteModalOpen, setDeleteModalOpen] = useState(false)
+  const [deleteTarget, setDeleteTarget] = useState(null) // { type: 'folder'|'flow', item }
+  const [deleteBusy, setDeleteBusy] = useState(false)
+
+  const [copyFolderModalOpen, setCopyFolderModalOpen] = useState(false)
+  const [copyFolderTarget, setCopyFolderTarget] = useState(null) // pasta
+  const [copyFolderBusy, setCopyFolderBusy] = useState(false)
 
   function closeMenu() {
     setMenu({ open: false, type: null, id: null })
@@ -243,23 +253,19 @@ export default function Fluxo() {
 
   async function carregarDados({ silent = false } = {}) {
     setLoading(true)
-
     try {
       const [pastasRes, fluxosRes] = await Promise.allSettled([apiGet('/flow/folders'), apiGet('/flow')])
-
       if (!mountedRef.current) return
 
-      if (pastasRes.status === 'fulfilled') {
-        setPastas(pastasRes.value?.data || [])
-      } else {
+      if (pastasRes.status === 'fulfilled') setPastas(pastasRes.value?.data || [])
+      else {
         console.error(pastasRes.reason)
         if (!silent) alert(`Erro ao carregar pastas: ${getErrText(pastasRes.reason)}`)
         setPastas([])
       }
 
-      if (fluxosRes.status === 'fulfilled') {
-        setFluxos(fluxosRes.value?.data || [])
-      } else {
+      if (fluxosRes.status === 'fulfilled') setFluxos(fluxosRes.value?.data || [])
+      else {
         console.error(fluxosRes.reason)
         if (!silent) alert(`Erro ao carregar fluxos: ${getErrText(fluxosRes.reason)}`)
         setFluxos([])
@@ -278,11 +284,7 @@ export default function Fluxo() {
   async function carregarFluxosDaPasta(folderId, { silent = false } = {}) {
     try {
       setLoading(true)
-
-      const fluxosRes = await apiGet('/flow', {
-        query: { folder_id: folderId }
-      })
-
+      const fluxosRes = await apiGet('/flow', { query: { folder_id: folderId } })
       if (!mountedRef.current) return
       setFluxos(fluxosRes?.data || [])
     } catch (err) {
@@ -305,45 +307,113 @@ export default function Fluxo() {
 
   useEffect(() => {
     mountedRef.current = true
-
     if (!didInitRef.current) {
       didInitRef.current = true
       carregarDados()
     }
-
     return () => {
       mountedRef.current = false
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
-  async function handleCriarPasta() {
-    const nome = prompt('Nome da pasta:')
+  // =========================
+  // ✅ CRIAR PASTA (NOVO modal)
+  // =========================
+  const existingFolderNames = useMemo(
+    () =>
+      (pastas || [])
+        .map((p) => String(p?.name || '').trim())
+        .filter(Boolean),
+    [pastas]
+  )
+
+  function abrirModalCriarPasta() {
+    closeMenu()
+    setCreateFolderModalOpen(true)
+  }
+
+  function fecharModalCriarPasta() {
+    if (createFolderBusy) return
+    setCreateFolderModalOpen(false)
+  }
+
+  async function confirmarModalCriarPasta(payload) {
+    const nome = String(payload?.value || '').trim()
     if (!nome) return
 
     try {
+      setCreateFolderBusy(true)
       await apiPost('/flow/folders', { name: nome })
       await carregarDados({ silent: true })
+      setCreateFolderModalOpen(false)
     } catch (err) {
       console.error(err)
       alert(`Erro ao criar pasta: ${getErrText(err)}`)
+    } finally {
+      setCreateFolderBusy(false)
     }
   }
 
-  async function handleCriarFluxo() {
-    const nome = prompt('Nome do novo fluxo:')
+  // =========================
+  // ✅ CRIAR FLUXO (NOVO modal)
+  // =========================
+  function abrirModalCriarFluxo() {
+    closeMenu()
+
+    // default: se estiver dentro de uma pasta, já pré-seleciona ela
+    const fid = pastaAtual?.id ? Number(pastaAtual.id) : null
+    setCreateFlowSelectedFolderId(Number.isFinite(fid) && fid > 0 ? fid : null)
+
+    setCreateFlowModalOpen(true)
+  }
+
+  function fecharModalCriarFluxo() {
+    if (createFlowBusy) return
+    setCreateFlowModalOpen(false)
+  }
+
+  const existingNamesForCreateFlowTarget = useMemo(() => {
+    // ⚠️ no modo "dentro da pasta", o state fluxos normalmente está filtrado pela pasta atual.
+    // Então validamos nomes apenas quando o destino selecionado é a pasta atual (ou raiz quando pastaAtual é null).
+    const fid = createFlowSelectedFolderId === null ? null : Number(createFlowSelectedFolderId)
+
+    const list = Array.isArray(fluxos) ? fluxos : []
+
+    // quando NÃO estou em pasta, "fluxos" é a lista geral => valida corretamente para qualquer folder_id
+    if (!pastaAtual) {
+      return list
+        .filter((f) => {
+          const ff = f?.folder_id ? Number(f.folder_id) : null
+          if (fid === null) return !ff
+          return Number(ff) === Number(fid)
+        })
+        .map((f) => String(f?.name || '').trim())
+        .filter(Boolean)
+    }
+
+    // quando estou em pasta, "fluxos" tende a ser apenas da pastaAtual
+    // então só validamos se o destino selecionado for a pastaAtual
+    const currentFolderId = pastaAtual?.id ? Number(pastaAtual.id) : null
+    if ((fid ?? null) !== (currentFolderId ?? null)) return []
+    return list.map((f) => String(f?.name || '').trim()).filter(Boolean)
+  }, [fluxos, createFlowSelectedFolderId, pastaAtual])
+
+  async function confirmarModalCriarFluxo(payload) {
+    const folderId = payload?.folder_id ?? null
+    const nome = String(payload?.name || '').trim()
     if (!nome) return
 
     try {
-      await apiPost('/flow', {
-        name: nome,
-        folder_id: pastaAtual?.id || null
-      })
-
+      setCreateFlowBusy(true)
+      await apiPost('/flow', { name: nome, folder_id: folderId })
       await refreshList({ silent: true })
+      setCreateFlowModalOpen(false)
     } catch (err) {
       console.error(err)
       alert(`Erro ao criar fluxo: ${getErrText(err)}`)
+    } finally {
+      setCreateFlowBusy(false)
     }
   }
 
@@ -384,190 +454,253 @@ export default function Fluxo() {
     })
   }
 
-  async function handleRenomearPasta(pasta) {
+  // =========================
+  // ✅ RENOMEAR (modal padrão)
+  // =========================
+  function abrirModalRenomearFolder(pasta) {
     closeMenu()
-    const nome = prompt('Novo nome da pasta:', pasta?.name || '')
-    if (!nome) return
-    const next = String(nome).trim()
+    setRenameTarget({ type: 'folder', item: pasta })
+    setRenameModalOpen(true)
+  }
+
+  function abrirModalRenomearFlow(fluxo) {
+    closeMenu()
+    setRenameTarget({ type: 'flow', item: fluxo })
+    setRenameModalOpen(true)
+  }
+
+  function fecharModalRenomear() {
+    if (renameBusy) return
+    setRenameModalOpen(false)
+    setRenameTarget(null)
+  }
+
+  async function confirmarModalRenomear(payload) {
+    const t = renameTarget
+    if (!t?.item?.id) return
+    const next = String(payload?.value || '').trim()
     if (!next) return
-    if (next === String(pasta?.name || '')) return
 
     try {
-      await apiPut(`/flow/folders/${pasta.id}`, { name: next })
-      await carregarDados({ silent: true })
+      setRenameBusy(true)
+
+      if (t.type === 'folder') {
+        if (next === String(t.item?.name || '')) {
+          fecharModalRenomear()
+          return
+        }
+        await apiPut(`/flow/folders/${t.item.id}`, { name: next })
+        await carregarDados({ silent: true })
+      } else {
+        if (next === String(t.item?.name || '')) {
+          fecharModalRenomear()
+          return
+        }
+        await apiPut(`/flow/${t.item.id}`, { name: next })
+        await refreshList({ silent: true })
+      }
+
+      setRenameModalOpen(false)
+      setRenameTarget(null)
     } catch (err) {
       console.error(err)
-      alert(`Erro ao renomear pasta: ${getErrText(err)}`)
+      alert(`Erro ao renomear: ${getErrText(err)}`)
+    } finally {
+      setRenameBusy(false)
     }
   }
 
-  async function handleCopiarPasta(pasta) {
+  // =========================
+  // ✅ COPIAR PASTA (modal padrão)
+  // =========================
+  function abrirModalCopiarPasta(pasta) {
     closeMenu()
-    const nome = prompt('Nome da cópia (opcional):', '')
-    const payload = {}
-    const v = String(nome || '').trim()
-    if (v) payload.name = v
+    setCopyFolderTarget(pasta)
+    setCopyFolderModalOpen(true)
+  }
+
+  function fecharModalCopiarPasta() {
+    if (copyFolderBusy) return
+    setCopyFolderModalOpen(false)
+    setCopyFolderTarget(null)
+  }
+
+  async function confirmarModalCopiarPasta(payload) {
+    if (!copyFolderTarget?.id) return
+
+    const name = String(payload?.value || '').trim()
+    const body = {}
+    if (name) body.name = name
 
     try {
-      await apiPost(`/flow/folders/${pasta.id}/copy`, payload)
+      setCopyFolderBusy(true)
+      await apiPost(`/flow/folders/${copyFolderTarget.id}/copy`, body)
       await carregarDados({ silent: true })
+
+      setCopyFolderModalOpen(false)
+      setCopyFolderTarget(null)
     } catch (err) {
       console.error(err)
       alert(`Erro ao copiar pasta: ${getErrText(err)}`)
+    } finally {
+      setCopyFolderBusy(false)
     }
   }
 
-  async function handleExcluirPasta(pasta) {
+  // =========================
+  // ✅ EXCLUIR (modal padrão)
+  // =========================
+  function abrirModalExcluirFolder(pasta) {
     closeMenu()
-    const ok = confirm(`Excluir a pasta "${pasta?.name}"?\n\nAtenção: só é possível excluir se estiver vazia.`)
-    if (!ok) return
+    setDeleteTarget({ type: 'folder', item: pasta })
+    setDeleteModalOpen(true)
+  }
+
+  function abrirModalExcluirFlow(fluxo) {
+    closeMenu()
+    setDeleteTarget({ type: 'flow', item: fluxo })
+    setDeleteModalOpen(true)
+  }
+
+  function fecharModalExcluir() {
+    if (deleteBusy) return
+    setDeleteModalOpen(false)
+    setDeleteTarget(null)
+  }
+
+  async function confirmarModalExcluir() {
+    const t = deleteTarget
+    if (!t?.item?.id) return
 
     try {
-      await apiDel(`/flow/folders/${pasta.id}`)
-      await carregarDados({ silent: true })
+      setDeleteBusy(true)
+
+      if (t.type === 'folder') {
+        await apiDel(`/flow/folders/${t.item.id}`)
+        await carregarDados({ silent: true })
+      } else {
+        await apiDel(`/flow/${t.item.id}`)
+        await refreshList({ silent: true })
+      }
+
+      setDeleteModalOpen(false)
+      setDeleteTarget(null)
     } catch (err) {
       console.error(err)
 
       const code = err?.payload?.error
-      if (code === 'folder_not_empty') {
+      if (t?.type === 'folder' && code === 'folder_not_empty') {
         const n = err?.payload?.data?.flows_count
         alert(`Essa pasta não está vazia. (${n || 0} fluxo(s) dentro)`)
         return
       }
 
-      alert(`Erro ao excluir pasta: ${getErrText(err)}`)
+      alert(`Erro ao excluir: ${getErrText(err)}`)
+    } finally {
+      setDeleteBusy(false)
     }
   }
 
-  async function handleRenomearFluxo(fluxo) {
+  // =========================
+  // ✅ COPIAR (modal)
+  // =========================
+  function abrirModalCopiarFluxo(fluxo) {
     closeMenu()
-    const nome = prompt('Novo nome do fluxo:', fluxo?.name || '')
-    if (!nome) return
-    const next = String(nome).trim()
-    if (!next) return
-    if (next === String(fluxo?.name || '')) return
-
-    try {
-      await apiPut(`/flow/${fluxo.id}`, { name: next })
-      await refreshList({ silent: true })
-    } catch (err) {
-      console.error(err)
-      alert(`Erro ao renomear fluxo: ${getErrText(err)}`)
-    }
+    setCopyFlow(fluxo)
+    const fid = fluxo?.folder_id ? Number(fluxo.folder_id) : null
+    setCopySelectedFolderId(Number.isFinite(fid) && fid > 0 ? fid : null)
+    setCopyModalOpen(true)
   }
 
-  async function handleCopiarFluxo(fluxo) {
-    closeMenu()
+  function fecharModalCopiarFluxo() {
+    if (copyBusy) return
+    setCopyModalOpen(false)
+    setCopyFlow(null)
+  }
 
-    const nome = prompt('Nome da cópia (opcional):', '')
-    if (nome === null) return
+  const existingNamesForCopyTarget = useMemo(() => {
+    const fid = copySelectedFolderId === null ? null : Number(copySelectedFolderId)
+    const list = Array.isArray(fluxos) ? fluxos : []
+    return list
+      .filter((f) => {
+        const ff = f?.folder_id ? Number(f.folder_id) : null
+        if (fid === null) return !ff
+        return Number(ff) === Number(fid)
+      })
+      .map((f) => String(f?.name || '').trim())
+      .filter(Boolean)
+  }, [fluxos, copySelectedFolderId])
 
-    const payload = {}
-    const v = String(nome || '').trim()
-    if (v) payload.name = v
+  async function confirmarModalCopiarFluxo(payload) {
+    if (!copyFlow?.id) return
 
-    const options = pastas || []
-    const lines = ['0 - Raiz (sem pasta)']
-    for (const p of options) lines.push(`${p.id} - ${p.name}`)
-
-    const rawDest = prompt(
-      `Copiar o fluxo "${fluxo?.name}" para qual pasta?\n\n${lines.join(
-        '\n'
-      )}\n\nDigite o número (ou deixe vazio para manter a mesma pasta):`,
-      ''
-    )
-    if (rawDest === null) return
-
-    const dest = String(rawDest || '').trim()
-
-    if (dest) {
-      if (dest === '0') {
-        payload.folder_id = null
-      } else {
-        const targetId = Number(dest)
-        if (!Number.isFinite(targetId) || targetId <= 0) {
-          alert('ID inválido.')
-          return
-        }
-        payload.folder_id = targetId
-      }
-    }
+    const folderId = payload?.folder_id ?? null
+    const name = String(payload?.name || '').trim()
 
     try {
-      await apiPost(`/flow/${fluxo.id}/copy`, payload)
+      setCopyBusy(true)
+      const body = { folder_id: folderId }
+      if (name) body.name = name
+
+      await apiPost(`/flow/${copyFlow.id}/copy`, body)
       await refreshList({ silent: true })
+
+      setCopyModalOpen(false)
+      setCopyFlow(null)
     } catch (err) {
       console.error(err)
       alert(`Erro ao copiar fluxo: ${getErrText(err)}`)
+    } finally {
+      setCopyBusy(false)
     }
   }
 
-  async function handleMoverFluxo(fluxo) {
+  // =========================
+  // ✅ MOVER (modal - novo)
+  // =========================
+  function abrirModalMoverFluxo(fluxo) {
     closeMenu()
+    setMoveFlow(fluxo)
 
-    const isInFolder = !!fluxo?.folder_id
+    // seleciona pasta atual do fluxo (ou raiz)
+    const fid = fluxo?.folder_id ? Number(fluxo.folder_id) : null
+    setMoveSelectedFolderId(Number.isFinite(fid) && fid > 0 ? fid : null)
 
-    const options = pastas || []
-    if (options.length === 0) {
-      alert('Você ainda não tem pastas para mover. Crie uma pasta primeiro.')
+    setMoveModalOpen(true)
+  }
+
+  function fecharModalMoverFluxo() {
+    if (moveBusy) return
+    setMoveModalOpen(false)
+    setMoveFlow(null)
+  }
+
+  async function confirmarModalMoverFluxo(payload) {
+    if (!moveFlow?.id) return
+
+    const folderId = payload?.folder_id ?? null
+    const current = moveFlow?.folder_id ? Number(moveFlow.folder_id) : null
+
+    // se não mudou nada, fecha
+    if ((folderId ?? null) === (current ?? null)) {
+      setMoveModalOpen(false)
+      setMoveFlow(null)
       return
     }
-
-    const title = `Mover fluxo "${fluxo?.name}" para:`
-    const lines = []
-
-    if (isInFolder) lines.push('0 - Raiz (sem pasta)')
-    for (const p of options) {
-      if (isInFolder && Number(p.id) === Number(fluxo.folder_id)) continue
-      lines.push(`${p.id} - ${p.name}`)
-    }
-
-    const raw = prompt(`${title}\n\n${lines.join('\n')}\n\nDigite o número:`)
-    if (raw === null) return
-
-    const val = String(raw).trim()
-    if (!val) return
-
-    if (val === '0') {
-      if (!isInFolder) return
-      try {
-        await apiPut(`/flow/${fluxo.id}`, { folder_id: null })
-        await refreshList({ silent: true })
-      } catch (err) {
-        console.error(err)
-        alert(`Erro ao mover fluxo: ${getErrText(err)}`)
-      }
-      return
-    }
-
-    const targetId = Number(val)
-    if (!Number.isFinite(targetId) || targetId <= 0) {
-      alert('ID inválido.')
-      return
-    }
-
-    if (isInFolder && Number(targetId) === Number(fluxo.folder_id)) return
 
     try {
-      await apiPut(`/flow/${fluxo.id}`, { folder_id: targetId })
+      setMoveBusy(true)
+      await apiPut(`/flow/${moveFlow.id}`, { folder_id: folderId })
       await refreshList({ silent: true })
+
+      setMoveModalOpen(false)
+      setMoveFlow(null)
     } catch (err) {
       console.error(err)
       alert(`Erro ao mover fluxo: ${getErrText(err)}`)
-    }
-  }
-
-  async function handleExcluirFluxo(fluxo) {
-    closeMenu()
-    const ok = confirm(`Excluir o fluxo "${fluxo?.name}"?\n\nAtenção: as etapas dele serão apagadas também.`)
-    if (!ok) return
-
-    try {
-      await apiDel(`/flow/${fluxo.id}`)
       await refreshList({ silent: true })
-    } catch (err) {
-      console.error(err)
-      alert(`Erro ao excluir fluxo: ${getErrText(err)}`)
+    } finally {
+      setMoveBusy(false)
     }
   }
 
@@ -585,7 +718,6 @@ export default function Fluxo() {
     return pastaById.get(fid)?.name || `Pasta #${fid}`
   }
 
-  // ✅ quantidade de fluxos por pasta (tela raiz)
   const flowsCountByFolderId = useMemo(() => {
     const map = new Map()
     for (const f of fluxos || []) {
@@ -595,6 +727,19 @@ export default function Fluxo() {
     }
     return map
   }, [fluxos])
+
+  // ✅ não mostrar pasta atual (em mover/copy) — mantém tudo validado e só filtra a lista
+  const pastasForMove = useMemo(() => {
+    const currentId = moveFlow?.folder_id ? Number(moveFlow.folder_id) : null
+    if (!currentId) return pastas
+    return (pastas || []).filter((p) => Number(p?.id) !== Number(currentId))
+  }, [pastas, moveFlow])
+
+  const pastasForCopy = useMemo(() => {
+    const currentId = copyFlow?.folder_id ? Number(copyFlow.folder_id) : null
+    if (!currentId) return pastas
+    return (pastas || []).filter((p) => Number(p?.id) !== Number(currentId))
+  }, [pastas, copyFlow])
 
   const dragEnabled = !pastaAtual && !fluxoAtual && !loading && (pastas?.length || 0) > 0 && !dragBusy
   const sensors = useSensors(useSensor(PointerSensor, { activationConstraint: { distance: 6 } }))
@@ -671,6 +816,23 @@ export default function Fluxo() {
     )
   }
 
+  const renameTitle =
+    renameTarget?.type === 'folder'
+      ? 'Renomear pasta'
+      : renameTarget?.type === 'flow'
+      ? 'Renomear fluxo'
+      : 'Renomear'
+
+  const renameLabel = renameTarget?.type === 'folder' ? 'Nome da pasta' : 'Nome do fluxo'
+
+  const deleteTitle =
+    deleteTarget?.type === 'folder' ? 'Excluir pasta' : deleteTarget?.type === 'flow' ? 'Excluir fluxo' : 'Excluir'
+
+  const deleteDesc =
+    deleteTarget?.type === 'folder'
+      ? `Excluir a pasta "${deleteTarget?.item?.name || ''}"?\n\nAtenção: só é possível excluir se estiver vazia.`
+      : `Excluir o fluxo "${deleteTarget?.item?.name || ''}"?\n\nAtenção: as etapas dele serão apagadas também.`
+
   return (
     <div className="pcPage">
       <div className="pcPageHeader">
@@ -693,12 +855,12 @@ export default function Fluxo() {
 
             <div style={{ display: 'flex', gap: 10 }}>
               {!pastaAtual && (
-                <button className="pcBtnPrimary" onClick={handleCriarPasta}>
+                <button className="pcBtnPrimary" onClick={abrirModalCriarPasta}>
                   Criar Pasta
                 </button>
               )}
 
-              <button className="pcBtnPrimary" onClick={handleCriarFluxo}>
+              <button className="pcBtnPrimary" onClick={abrirModalCriarFluxo}>
                 Criar Novo Fluxo
               </button>
             </div>
@@ -706,6 +868,124 @@ export default function Fluxo() {
 
           <div className="pcCardBody">
             {loading && <div className="pcFluxoPlaceholder">Carregando...</div>}
+
+            {/* ✅ modal criar pasta (NOVO) */}
+            <FlowActionModal
+              open={createFolderModalOpen}
+              mode="rename"
+              title="Criar pasta"
+              inputLabel="Nome da pasta"
+              inputPlaceholder="Digite o nome da pasta"
+              initialValue=""
+              confirmText="Criar pasta"
+              existingNames={existingFolderNames}
+              renameConflictText="Já existe uma pasta com esse nome. Escolha outro."
+              busy={createFolderBusy}
+              onCancel={fecharModalCriarPasta}
+              onConfirm={confirmarModalCriarPasta}
+            />
+
+            {/* ✅ modal criar fluxo (NOVO) */}
+            <FlowActionModal
+              open={createFlowModalOpen}
+              mode="select-folder"
+              title="Criar novo fluxo"
+              confirmText="Criar fluxo"
+              busy={createFlowBusy}
+              folders={pastas}
+              showRootOption={true}
+              rootLabel="Raiz (sem pasta)"
+              selectedFolderId={createFlowSelectedFolderId}
+              onSelectFolder={setCreateFlowSelectedFolderId}
+              enableName={true}
+              nameLabel="Nome do fluxo"
+              namePlaceholder="Digite o nome do fluxo"
+              baseCopyName=""
+              existingNames={existingNamesForCreateFlowTarget}
+              nameRequired={true}
+              nameAutoGenerate={false}
+              onCancel={fecharModalCriarFluxo}
+              onConfirm={confirmarModalCriarFluxo}
+            />
+
+            {/* ✅ modal renomear (pasta/fluxo) */}
+            <FlowActionModal
+              open={renameModalOpen}
+              mode="rename"
+              title={renameTitle}
+              inputLabel={renameLabel}
+              inputPlaceholder="Digite o novo nome"
+              initialValue={renameTarget?.item?.name || ''}
+              confirmText="Salvar"
+              busy={renameBusy}
+              onCancel={fecharModalRenomear}
+              onConfirm={confirmarModalRenomear}
+            />
+
+            {/* ✅ modal copiar pasta */}
+            <FlowActionModal
+              open={copyFolderModalOpen}
+              mode="rename"
+              title="Copiar pasta"
+              inputLabel="Nome da cópia (opcional)"
+              inputPlaceholder="Se não informar, será criada uma cópia com nome padrão"
+              initialValue=""
+              confirmText="Copiar"
+              busy={copyFolderBusy}
+              onCancel={fecharModalCopiarPasta}
+              onConfirm={confirmarModalCopiarPasta}
+            />
+
+            {/* ✅ modal excluir (pasta/fluxo) */}
+            <FlowActionModal
+              open={deleteModalOpen}
+              mode="confirm"
+              title={deleteTitle}
+              description={deleteDesc}
+              danger={true}
+              confirmText="Excluir"
+              busy={deleteBusy}
+              onCancel={fecharModalExcluir}
+              onConfirm={confirmarModalExcluir}
+            />
+
+            {/* ✅ modal copiar fluxo */}
+            <FlowActionModal
+              open={copyModalOpen}
+              mode="select-folder"
+              title="Copiar fluxo"
+              confirmText="Copiar aqui"
+              busy={copyBusy}
+              folders={pastasForCopy}
+              showRootOption={true}
+              rootLabel="Raiz (sem pasta)"
+              selectedFolderId={copySelectedFolderId}
+              onSelectFolder={setCopySelectedFolderId}
+              enableName={true}
+              nameLabel="Nome da cópia (opcional)"
+              namePlaceholder="Se não informar, será usado: Nome (copia)"
+              baseCopyName={copyFlow?.name || ''}
+              existingNames={existingNamesForCopyTarget}
+              onCancel={fecharModalCopiarFluxo}
+              onConfirm={confirmarModalCopiarFluxo}
+            />
+
+            {/* ✅ modal mover fluxo */}
+            <FlowActionModal
+              open={moveModalOpen}
+              mode="select-folder"
+              title="Mover fluxo"
+              confirmText="Mover aqui"
+              busy={moveBusy}
+              folders={pastasForMove}
+              showRootOption={true}
+              rootLabel="Raiz (sem pasta)"
+              selectedFolderId={moveSelectedFolderId}
+              onSelectFolder={setMoveSelectedFolderId}
+              enableName={false}
+              onCancel={fecharModalMoverFluxo}
+              onConfirm={confirmarModalMoverFluxo}
+            />
 
             {!loading && !pastaAtual && pastas.length > 0 && (
               <DndContext sensors={sensors} onDragStart={onDragStartDnd} onDragCancel={onDragCancelDnd} onDragEnd={onDragEndDnd}>
@@ -729,17 +1009,21 @@ export default function Fluxo() {
                           menuRef={menuRef}
                           dragEnabled={dragEnabled}
                         >
-                          <button type="button" className="pcFluxoMenuItem" onClick={() => handleRenomearPasta(pasta)}>
+                          <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalRenomearFolder(pasta)}>
                             Renomear
                           </button>
 
-                          <button type="button" className="pcFluxoMenuItem" onClick={() => handleCopiarPasta(pasta)}>
+                          <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalCopiarPasta(pasta)}>
                             Copiar pasta
                           </button>
 
                           <div className="pcFluxoMenuDivider" />
 
-                          <button type="button" className="pcFluxoMenuItem pcFluxoMenuItemDanger" onClick={() => handleExcluirPasta(pasta)}>
+                          <button
+                            type="button"
+                            className="pcFluxoMenuItem pcFluxoMenuItemDanger"
+                            onClick={() => abrirModalExcluirFolder(pasta)}
+                          >
                             Excluir
                           </button>
                         </FolderDropCard>
@@ -768,21 +1052,25 @@ export default function Fluxo() {
                               menuRef={menuRef}
                               dragEnabled={dragEnabled}
                             >
-                              <button type="button" className="pcFluxoMenuItem" onClick={() => handleRenomearFluxo(fluxo)}>
+                              <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalRenomearFlow(fluxo)}>
                                 Renomear
                               </button>
 
-                              <button type="button" className="pcFluxoMenuItem" onClick={() => handleCopiarFluxo(fluxo)}>
+                              <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalCopiarFluxo(fluxo)}>
                                 Copiar fluxo…
                               </button>
 
-                              <button type="button" className="pcFluxoMenuItem" onClick={() => handleMoverFluxo(fluxo)}>
+                              <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalMoverFluxo(fluxo)}>
                                 Mover para…
                               </button>
 
                               <div className="pcFluxoMenuDivider" />
 
-                              <button type="button" className="pcFluxoMenuItem pcFluxoMenuItemDanger" onClick={() => handleExcluirFluxo(fluxo)}>
+                              <button
+                                type="button"
+                                className="pcFluxoMenuItem pcFluxoMenuItemDanger"
+                                onClick={() => abrirModalExcluirFlow(fluxo)}
+                              >
                                 Excluir
                               </button>
                             </FlowDraggableCard>
@@ -811,15 +1099,7 @@ export default function Fluxo() {
                     return (
                       <div key={fluxo.id} className="pcFluxoCard" onClick={() => abrirFluxo(fluxo)} style={{ position: 'relative' }}>
                         <div style={{ display: 'flex', alignItems: 'flex-start', gap: 10 }}>
-                          <div
-                            style={{
-                              minWidth: 0,
-                              flex: '1 1 auto',
-                              display: 'flex',
-                              flexDirection: 'column',
-                              gap: 6
-                            }}
-                          >
+                          <div style={{ minWidth: 0, flex: '1 1 auto', display: 'flex', flexDirection: 'column', gap: 6 }}>
                             <strong title={fluxo.name} style={{ overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                               {fluxo.name}
                             </strong>
@@ -849,21 +1129,25 @@ export default function Fluxo() {
                             }}
                             role="menu"
                           >
-                            <button type="button" className="pcFluxoMenuItem" onClick={() => handleRenomearFluxo(fluxo)}>
+                            <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalRenomearFlow(fluxo)}>
                               Renomear
                             </button>
 
-                            <button type="button" className="pcFluxoMenuItem" onClick={() => handleCopiarFluxo(fluxo)}>
+                            <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalCopiarFluxo(fluxo)}>
                               Copiar fluxo…
                             </button>
 
-                            <button type="button" className="pcFluxoMenuItem" onClick={() => handleMoverFluxo(fluxo)}>
+                            <button type="button" className="pcFluxoMenuItem" onClick={() => abrirModalMoverFluxo(fluxo)}>
                               Mover para…
                             </button>
 
                             <div className="pcFluxoMenuDivider" />
 
-                            <button type="button" className="pcFluxoMenuItem pcFluxoMenuItemDanger" onClick={() => handleExcluirFluxo(fluxo)}>
+                            <button
+                              type="button"
+                              className="pcFluxoMenuItem pcFluxoMenuItemDanger"
+                              onClick={() => abrirModalExcluirFlow(fluxo)}
+                            >
                               Excluir
                             </button>
                           </div>
