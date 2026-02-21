@@ -16,6 +16,19 @@ import Fluxo from '../pages/app/fluxo/Fluxo.jsx'
 import Configuracoes from '../pages/app/configuracoes/Configuracoes.jsx'
 import Suporte from '../pages/app/suporte/Suporte.jsx'
 
+// ✅ subpáginas reais de Configurações
+import Conexao from '../pages/app/configuracoes/conexao/Conexao.jsx'
+import Campos from '../pages/app/configuracoes/campos/Campos.jsx'
+import Etiquetas from '../pages/app/configuracoes/etiquetas/Etiquetas.jsx'
+import RespostasRapidas from '../pages/app/configuracoes/respostas-rapidas/RespostasRapidas.jsx'
+import Equipe from '../pages/app/configuracoes/equipe/Equipe.jsx'
+import Horarios from '../pages/app/configuracoes/horarios/Horarios.jsx'
+import Companhia from '../pages/app/configuracoes/companhia/Companhia.jsx'
+import Integracoes from '../pages/app/configuracoes/integracoes/Integracoes.jsx'
+import Registros from '../pages/app/configuracoes/registros/Registros.jsx'
+import FluxosPadroes from '../pages/app/configuracoes/fluxos-padroes/FluxosPadroes.jsx'
+import Faturamento from '../pages/app/configuracoes/faturamento/Faturamento.jsx'
+
 import AdminDashboard from '../pages/admin/dashboard/AdminDashboard.jsx'
 import AdminClientes from '../pages/admin/clientes/AdminClientes.jsx'
 import AdminPlanos from '../pages/admin/planos/AdminPlanos.jsx'
@@ -32,7 +45,6 @@ function isLocalhost() {
 }
 
 function isAppHost() {
-  // ✅ DEV: localhost se comporta como app (pra você conseguir trabalhar)
   if (isLocalhost()) return true
   return window.location.hostname.startsWith('app.')
 }
@@ -42,17 +54,12 @@ function RequireAuth({ children }) {
   const local = isLocalhost()
   const appHost = isAppHost()
 
-  // ✅ Se não estiver logado
   if (!authed) {
-    // DEV/local e app: vai pra /login interno
     if (local || appHost) return <Navigate to="/login" replace />
-
-    // domínio principal (produção): manda pro login do domínio principal
     window.location.href = 'https://plugconversa.com.br/login'
     return null
   }
 
-  // ✅ Se estiver logado, mas entrou no domínio principal em produção, força app
   if (!local && !window.location.hostname.startsWith('app.')) {
     window.location.href = 'https://app.plugconversa.com.br/dashboard'
     return null
@@ -64,14 +71,11 @@ function RequireAuth({ children }) {
 function Router() {
   const appHost = isAppHost()
 
-  // ✅ No subdomínio app OU no localhost: rotas do app na raiz
   if (appHost) {
     return (
       <Routes>
-        {/* Público (local/app) */}
         <Route path="/login" element={<Login />} />
 
-        {/* Cliente (protegido) */}
         <Route
           path="/"
           element={
@@ -86,14 +90,29 @@ function Router() {
           <Route path="crm" element={<CRM />} />
           <Route path="disparo" element={<Disparo />} />
           <Route path="fluxo" element={<Fluxo />} />
-          <Route path="configuracoes" element={<Configuracoes />} />
+
+          <Route path="configuracoes" element={<Configuracoes />}>
+            <Route index element={<Navigate to="conexao" replace />} />
+
+            <Route path="conexao" element={<Conexao />} />
+            <Route path="campos" element={<Campos />} />
+            <Route path="etiquetas" element={<Etiquetas />} />
+            <Route path="respostas-rapidas" element={<RespostasRapidas />} />
+            <Route path="equipe" element={<Equipe />} />
+            <Route path="horarios" element={<Horarios />} />
+            <Route path="companhia" element={<Companhia />} />
+            <Route path="integracoes" element={<Integracoes />} />
+            <Route path="registros" element={<Registros />} />
+            <Route path="fluxos-padroes" element={<FluxosPadroes />} />
+            <Route path="faturamento" element={<Faturamento />} />
+          </Route>
+
           <Route path="suporte" element={<Suporte />} />
           <Route path="contatos" element={<Contatos />} />
           <Route path="campanhas" element={<Campanhas />} />
           <Route path="automacao" element={<Automacao />} />
         </Route>
 
-        {/* Admin (protegido) */}
         <Route
           path="/admin"
           element={
@@ -107,20 +126,17 @@ function Router() {
           <Route path="planos" element={<AdminPlanos />} />
         </Route>
 
-        {/* fallback */}
         <Route path="*" element={<Navigate to="/dashboard" replace />} />
       </Routes>
     )
   }
 
-  // ✅ No domínio principal (produção): apenas institucional + login
   return (
     <Routes>
       <Route path="/" element={<Home />} />
       <Route path="/login" element={<Login />} />
       <Route path="/quero-ser-cliente" element={<QueroSerCliente />} />
 
-      {/* bloqueia acesso direto às rotas internas no domínio principal */}
       <Route path="/dashboard" element={<Navigate to="/login" replace />} />
       <Route path="/admin/*" element={<Navigate to="/login" replace />} />
 

@@ -1,0 +1,40 @@
+/* caminho: front/src/pages/app/configuracoes/horarios/horarios.css */
+
+.pcHoursGrid {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.pcHoursRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pcHoursDay {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  font-weight: 500;
+}
+
+.pcHoursTime {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.pcAfterHoursOptions {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcAfterOption {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+/* fim: front/src/pages/app/configuracoes/horarios/horarios.css */

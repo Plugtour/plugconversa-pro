@@ -1,0 +1,125 @@
+/* caminho: front/src/pages/app/configuracoes/faturamento/faturamento.css */
+
+.pcBillingInfo {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 24px;
+  flex-wrap: wrap;
+}
+
+.pcBillingPlan {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  min-width: 260px;
+}
+
+.pcBillingPlanTop {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  flex-wrap: wrap;
+}
+
+.pcBillingPlanName {
+  font-size: 14px;
+}
+
+.pcBillingMeta {
+  color: #444;
+  font-size: 13px;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.pcBillingActions {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+}
+
+.pcBtnDanger {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #dc2626;
+  color: #fff;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+  padding: 8px 14px;
+  border-radius: 8px;
+  cursor: pointer;
+  font: inherit;
+  font-size: 13px;
+  font-weight: 600;
+  transition: opacity 160ms ease, transform 80ms ease;
+}
+
+.pcBtnDanger:hover {
+  opacity: 0.92;
+}
+
+.pcBtnDanger:active {
+  transform: translateY(1px);
+}
+
+.pcBtnDanger:focus-visible {
+  outline: 2px solid rgba(220, 38, 38, 0.35);
+  outline-offset: 2px;
+}
+
+.pcBillingTable {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.pcBillingRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 1fr;
+  gap: 10px;
+  padding: 10px;
+  border: 1px solid var(--pc-border);
+  border-radius: 8px;
+  background: #fff;
+  align-items: center;
+}
+
+.pcBillingRowHead {
+  background: var(--pc-surface-2);
+  font-weight: 700;
+  color: #333;
+}
+
+.pcBillingBadge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 4px 10px;
+  border-radius: 999px;
+  font-size: 12px;
+  font-weight: 700;
+  border: 1px solid rgba(0, 0, 0, 0.08);
+}
+
+.pcBillingBadgeActive {
+  background: rgba(22, 163, 74, 0.12);
+  color: #166534;
+}
+
+.pcBillingBadgePaid {
+  background: rgba(37, 99, 235, 0.12);
+  color: #1d4ed8;
+}
+
+@media (max-width: 720px) {
+  .pcBillingRow {
+    grid-template-columns: 1fr;
+  }
+
+  .pcBillingRowHead {
+    display: none;
+  }
+}
+
+/* fim: front/src/pages/app/configuracoes/faturamento/faturamento.css */

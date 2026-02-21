@@ -1,0 +1,15 @@
+/* caminho: front/src/pages/app/configuracoes/integracoes/integracoes.css */
+
+.pcIntegrationGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  gap: 12px;
+}
+
+.pcIntegrationsHeader {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+/* fim: front/src/pages/app/configuracoes/integracoes/integracoes.css */

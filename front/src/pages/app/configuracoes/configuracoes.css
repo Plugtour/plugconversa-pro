@@ -1,13 +1,44 @@
 /* caminho: front/src/pages/app/configuracoes/configuracoes.css */
 
-.pcConfigPlaceholder {
-  padding: 30px;
-  text-align: center;
-  font-size: 14px;
-  color: #888;
-  border: 1px dashed #ddd;
-  border-radius: 10px;
-  background: #fafafa;
+.pcConfigLayout {
+  display: flex;
+  gap: 24px;
+  align-items: flex-start;
+}
+
+.pcConfigMenu {
+  width: 240px;
+  min-width: 240px;
+  background: #fff;
+  border: 1px solid var(--pc-border);
+  border-radius: var(--pc-radius-md);
+  padding: 12px;
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pcConfigMenuItem {
+  padding: 8px 10px;
+  border-radius: var(--pc-radius-sm);
+  font-size: 13px;
+  color: var(--pc-text);
+  text-decoration: none;
+  transition: background 0.2s;
+}
+
+.pcConfigMenuItem:hover {
+  background: var(--pc-surface-2);
+}
+
+.pcConfigMenuItem.active {
+  background: var(--pc-primary);
+  color: var(--pc-primary-contrast);
+}
+
+.pcConfigContent {
+  flex: 1;
+  min-width: 0;
 }
 
 /* fim: front/src/pages/app/configuracoes/configuracoes.css */

@@ -1,0 +1,29 @@
+/* caminho: front/src/pages/app/configuracoes/companhia/companhia.css */
+
+.pcCompanyGrid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 12px;
+}
+
+.pcCompanyVisual {
+  display: flex;
+  gap: 40px;
+  align-items: flex-start;
+}
+
+.pcCompanyLogoPreview {
+  margin-top: 12px;
+  width: 120px;
+  height: auto;
+  border: 1px solid #ddd;
+  border-radius: 8px;
+}
+
+.pcCompanyActions {
+  margin-top: 24px;
+  display: flex;
+  justify-content: flex-end;
+}
+
+/* fim: front/src/pages/app/configuracoes/companhia/companhia.css */

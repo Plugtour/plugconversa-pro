@@ -1,0 +1,23 @@
+/* caminho: front/src/pages/app/configuracoes/equipe/equipe.css */
+
+/* Página */
+.pcCfgPage {
+  min-width: 0;
+}
+
+/* Reaproveita classes já usadas nos outros módulos:
+   pcCfgHeader, pcCfgCardHeaderRow, pcCfgSub, pcCfgHeaderActions,
+   pcCfgSearch, pcCfgBtnPrimary, pcCfgBtnGhost, pcCfgEmpty,
+   pcCfgTable, pcCfgRow, pcCfgRowHead, pcCfgRight,
+   pcCfgNameTop, pcCfgType, pcCfgPillBtn, pcCfgNote,
+   pcCfgModalOverlay, pcCfgModal, pcCfgModalHeader, pcCfgIconBtn, pcCfgModalBody,
+   pcCfgForm, pcCfgLabel, pcCfgInput, pcCfgError, pcCfgFormActions
+*/
+
+.pcCfgEmail {
+  font-size: 13px;
+  color: #444;
+  word-break: break-word;
+}
+
+/* fim: front/src/pages/app/configuracoes/equipe/equipe.css */

@@ -1,5 +1,10 @@
 // caminho: front/src/pages/app/configuracoes/Configuracoes.jsx
+import { NavLink, Outlet } from 'react-router-dom'
 import './configuracoes.css'
+
+function navClass({ isActive }) {
+  return `pcConfigMenuItem${isActive ? ' active' : ''}`
+}
 
 export default function Configuracoes() {
   return (
@@ -10,18 +15,60 @@ export default function Configuracoes() {
         <p>Preferências da conta e integrações</p>
       </div>
 
-      <div className="pcBlock">
-        <div className="pcCard">
-          <div className="pcCardHeader">
-            <h3>Configurações Gerais</h3>
-          </div>
+      <div className="pcConfigLayout">
 
-          <div className="pcCardBody">
-            <div className="pcConfigPlaceholder">
-              Configurações da conta e integrações futuras
-            </div>
-          </div>
+        {/* Menu lateral interno */}
+        <aside className="pcConfigMenu">
+          <NavLink to="conexao" className={navClass}>
+            Conexão
+          </NavLink>
+
+          <NavLink to="campos" className={navClass}>
+            Campos
+          </NavLink>
+
+          <NavLink to="etiquetas" className={navClass}>
+            Etiquetas
+          </NavLink>
+
+          <NavLink to="respostas-rapidas" className={navClass}>
+            Respostas rápidas
+          </NavLink>
+
+          <NavLink to="equipe" className={navClass}>
+            Equipe
+          </NavLink>
+
+          <NavLink to="horarios" className={navClass}>
+            Horários
+          </NavLink>
+
+          <NavLink to="fluxos-padroes" className={navClass}>
+            Fluxos padrões
+          </NavLink>
+
+          <NavLink to="companhia" className={navClass}>
+            Companhia
+          </NavLink>
+
+          <NavLink to="registros" className={navClass}>
+            Registros
+          </NavLink>
+
+          <NavLink to="faturamento" className={navClass}>
+            Faturamento
+          </NavLink>
+
+          <NavLink to="integracoes" className={navClass}>
+            Integrações
+          </NavLink>
+        </aside>
+
+        {/* Área de conteúdo das subpáginas */}
+        <div className="pcConfigContent">
+          <Outlet />
         </div>
+
       </div>
 
     </div>
