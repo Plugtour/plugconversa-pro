@@ -47,4 +47,113 @@
   color: var(--pc-muted);
 }
 
+.pcInboxComposer{
+  border-top: 1px solid var(--pc-border);
+  padding: 12px;
+  background: #fff;
+  position: relative;
+}
+
+.pcInboxInput{
+  width: 100%;
+  border: 1px solid var(--pc-border);
+  border-radius: 12px;
+  padding: 10px 12px;
+  font-size: 14px;
+  outline: none;
+  resize: none;
+}
+
+.pcInboxInput:focus{
+  box-shadow: 0 0 0 3px rgba(0,0,0,0.06);
+  border-color: rgba(0,0,0,0.22);
+}
+
+.pcInboxComposerActions{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.pcInboxHint{
+  font-size: 12px;
+  color: var(--pc-muted);
+}
+
+.pcInboxSend{
+  height: 36px;
+  padding: 0 14px;
+  border-radius: 12px;
+  border: 1px solid rgba(0,0,0,0.10);
+  background: #111;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.pcInboxSend:hover{
+  background:#0b0b0b;
+}
+
+.pcInboxSuggest{
+  position:absolute;
+  left: 12px;
+  right: 12px;
+  bottom: 92px;
+  background: #fff;
+  border: 1px solid var(--pc-border);
+  border-radius: 14px;
+  box-shadow: 0 18px 60px rgba(0,0,0,0.14);
+  overflow: hidden;
+  z-index: 10;
+}
+
+.pcInboxSuggestItem{
+  width: 100%;
+  text-align: left;
+  border: none;
+  background: #fff;
+  padding: 10px 12px;
+  cursor: pointer;
+  border-bottom: 1px solid rgba(0,0,0,0.06);
+}
+
+.pcInboxSuggestItem:last-child{
+  border-bottom: none;
+}
+
+.pcInboxSuggestItem:hover{
+  background: rgba(0,0,0,0.03);
+}
+
+.pcInboxSuggestTop{
+  display:flex;
+  gap: 10px;
+  align-items:center;
+}
+
+.pcInboxSuggestShortcut{
+  font-weight: 800;
+  font-size: 12px;
+  color: #111;
+}
+
+.pcInboxSuggestName{
+  font-size: 12px;
+  color: rgba(0,0,0,0.55);
+  font-weight: 700;
+}
+
+.pcInboxSuggestMsg{
+  margin-top: 6px;
+  font-size: 12px;
+  color: rgba(0,0,0,0.65);
+  line-height: 1.25;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
 /* fim: front/src/pages/app/inbox/inbox.css */

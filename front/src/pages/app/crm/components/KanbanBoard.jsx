@@ -1,5 +1,4 @@
 // caminho: front/src/pages/app/crm/components/KanbanBoard.jsx
-
 import { memo, useCallback, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
@@ -52,7 +51,7 @@ const OverlayStaticCard = memo(function OverlayStaticCard({ card }) {
   )
 })
 
-export default function KanbanBoard({ columns, setColumns }) {
+export default function KanbanBoard({ columns, setColumns, onCardMoved }) {
   const sensors = useSensors(
     useSensor(PointerSensor, {
       activationConstraint: { distance: 6 }
@@ -179,6 +178,7 @@ export default function KanbanBoard({ columns, setColumns }) {
 
       if (!overColumn) return
 
+      // mesmo col
       if (activeColumn.id === overColumn.id) {
         const oldIndex = activeColumn.cards.findIndex((c) => c.id === activeId)
         const newIndex = overColIdFromBody
@@ -196,8 +196,12 @@ export default function KanbanBoard({ columns, setColumns }) {
         return
       }
 
+      // move col -> col
       const activeCard = activeColumn.cards.find((c) => c.id === activeId)
       if (!activeCard) return
+
+      const fromColId = activeColumn.id
+      const toColId = overColumn.id
 
       setColumns((prev) =>
         prev.map((col) => {
@@ -223,8 +227,15 @@ export default function KanbanBoard({ columns, setColumns }) {
           return col
         })
       )
+
+      // ✅ callback opcional para registrar log
+      onCardMoved?.({
+        cardId: activeCard.id,
+        fromColumnId: fromColId,
+        toColumnId: toColId
+      })
     },
-    [bodyToColId, clearRaf, columnIds, columns, findColumnByCard, setColumns]
+    [bodyToColId, clearRaf, columnIds, columns, findColumnByCard, onCardMoved, setColumns]
   )
 
   const draggingCardId =
@@ -275,9 +286,7 @@ export default function KanbanBoard({ columns, setColumns }) {
             isolation: 'isolate'
           }}
         >
-          {activeItem?.type === 'card' && (
-            <OverlayStaticCard card={activeItem.data} />
-          )}
+          {activeItem?.type === 'card' && <OverlayStaticCard card={activeItem.data} />}
 
           {activeItem?.type === 'column' && overlayColumn && (
             <div
@@ -299,9 +308,7 @@ export default function KanbanBoard({ columns, setColumns }) {
                 </div>
 
                 <div className="pcCrmColHeaderRight">
-                  <span className="pcCrmColBadge">
-                    {overlayColumn.cards?.length ?? 0}
-                  </span>
+                  <span className="pcCrmColBadge">{overlayColumn.cards?.length ?? 0}</span>
                   <button type="button" className="pcCrmDots">
                     ⋮
                   </button>
@@ -312,9 +319,7 @@ export default function KanbanBoard({ columns, setColumns }) {
                 {overlayCards.list.map((card) => (
                   <OverlayStaticCard key={card.id} card={card} />
                 ))}
-                {overlayCards.rest > 0 && (
-                  <div className="pcCrmEmpty">+{overlayCards.rest} card(s)…</div>
-                )}
+                {overlayCards.rest > 0 && <div className="pcCrmEmpty">+{overlayCards.rest} card(s)…</div>}
               </div>
             </div>
           )}
@@ -323,5 +328,4 @@ export default function KanbanBoard({ columns, setColumns }) {
     </DndContext>
   )
 }
-
 // fim: front/src/pages/app/crm/components/KanbanBoard.jsx

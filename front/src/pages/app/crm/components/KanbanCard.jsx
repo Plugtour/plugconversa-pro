@@ -3,7 +3,7 @@ import { memo, useMemo } from 'react'
 import { useSortable } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
 
-function KanbanCardComponent({ card }) {
+function KanbanCardComponent({ card, onOpenDetails }) {
   const { setNodeRef, attributes, listeners, transform, transition, isDragging } = useSortable({
     id: card.id
   })
@@ -14,16 +14,9 @@ function KanbanCardComponent({ card }) {
     () => ({
       transform: CSS.Transform.toString(transform),
       transition,
-
-      // ✅ não reduzir opacidade do card real (isso costuma causar “apagão” em irmãos no Chrome)
       opacity: 1,
-
       cursor: isDragging ? 'grabbing' : 'grab',
-
-      // ✅ não deixar willChange permanente
       willChange: hasTransform || isDragging ? 'transform' : undefined,
-
-      // ✅ estabiliza renderização durante drag/transform (sem forçar layer o tempo todo)
       backfaceVisibility: hasTransform || isDragging ? 'hidden' : undefined,
       WebkitBackfaceVisibility: hasTransform || isDragging ? 'hidden' : undefined,
       transformStyle: hasTransform || isDragging ? 'preserve-3d' : undefined
@@ -32,6 +25,14 @@ function KanbanCardComponent({ card }) {
   )
 
   const shortId = useMemo(() => String(card.id || '').replace(/^c-/, ''), [card.id])
+
+  const tagsPreview = useMemo(() => {
+    const names = Array.isArray(card.tagNames) ? card.tagNames : []
+    if (names.length === 0) return ''
+    const first = names.slice(0, 2).join(', ')
+    const rest = Math.max(0, names.length - 2)
+    return rest > 0 ? `${first} +${rest}` : first
+  }, [card.tagNames])
 
   return (
     <div
@@ -45,11 +46,22 @@ function KanbanCardComponent({ card }) {
         <div className="pcCrmCardTitleWrap">
           <div className="pcCrmCardTitle">{card.title}</div>
           <div className="pcCrmCardSub">{card.subtitle || ''}</div>
+          {!!tagsPreview && <div className="pcCrmCardSub">{tagsPreview}</div>}
         </div>
 
         <div className="pcCrmCardRight">
           <span className="pcCrmCardId">#{shortId || '1'}</span>
-          <button type="button" className="pcCrmDots" aria-label="Menu do card" title="Menu">
+          <button
+            type="button"
+            className="pcCrmDots"
+            aria-label="Menu do card"
+            title="Detalhes"
+            onPointerDown={(e) => e.stopPropagation()}
+            onClick={(e) => {
+              e.stopPropagation()
+              onOpenDetails?.(card)
+            }}
+          >
             ⋮
           </button>
         </div>
@@ -65,7 +77,9 @@ export default memo(
       prev.card === next.card ||
       (prev.card?.id === next.card?.id &&
         prev.card?.title === next.card?.title &&
-        prev.card?.subtitle === next.card?.subtitle)
+        prev.card?.subtitle === next.card?.subtitle &&
+        String(prev.card?.tagNames || '') === String(next.card?.tagNames || '') &&
+        prev.onOpenDetails === next.onOpenDetails)
     )
   }
 )

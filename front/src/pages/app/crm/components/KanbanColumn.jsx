@@ -42,11 +42,7 @@ function KanbanColumnComponent({
     transform: CSS.Transform.toString(transform),
     transition,
     opacity: isColumnOverlayActive ? 0 : isDragging ? 0.9 : 1,
-
-    // ✅ NÃO deixar willChange sempre ligado (isso causa “apagão” de texto em irmãos no Chrome)
     willChange: hasTransform || isDragging ? 'transform' : undefined,
-
-    // ✅ estabiliza renderização de texto quando existir transform (sem forçar layer o tempo todo)
     backfaceVisibility: hasTransform || isDragging ? 'hidden' : undefined,
     WebkitBackfaceVisibility: hasTransform || isDragging ? 'hidden' : undefined,
     transformStyle: hasTransform || isDragging ? 'preserve-3d' : undefined
@@ -102,7 +98,7 @@ function KanbanColumnComponent({
           )}
 
           {column.cards.map((card) => (
-            <KanbanCard key={card.id} card={card} />
+            <KanbanCard key={card.id} card={card} onOpenDetails={column.onOpenDetails} />
           ))}
 
           {showEmptyDropPlaceholder && <div className="pcCrmDropPlaceholder" />}

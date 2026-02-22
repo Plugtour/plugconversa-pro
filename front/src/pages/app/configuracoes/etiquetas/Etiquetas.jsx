@@ -1,6 +1,7 @@
 // caminho: front/src/pages/app/configuracoes/etiquetas/Etiquetas.jsx
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './etiquetas.css'
+import { getTags, setTags, logEvent } from '../../../../services/appStore'
 
 function normalizeName(v) {
   return String(v || '').trim().replace(/\s+/g, ' ')
@@ -35,12 +36,13 @@ function ModalBase({ open, title, children, onClose }) {
 }
 
 export default function Etiquetas() {
-  const [tags, setTags] = useState(() => [
-    { id: 1, name: 'Lead Frio', color: '#64748B', active: true },
-    { id: 2, name: 'Lead Morno', color: '#F59E0B', active: true },
-    { id: 3, name: 'Lead Quente', color: '#EF4444', active: true },
-    { id: 4, name: 'Comprou no site', color: '#10B981', active: true }
-  ])
+  const clientId = 1
+
+  const [tags, setTagsState] = useState(() => getTags(clientId))
+
+  useEffect(() => {
+    setTags(clientId, tags)
+  }, [clientId, tags])
 
   const [q, setQ] = useState('')
   const filtered = useMemo(() => {
@@ -70,11 +72,29 @@ export default function Etiquetas() {
   }
 
   function toggleActive(id) {
-    setTags((prev) => prev.map((t) => (t.id === id ? { ...t, active: !t.active } : t)))
+    setTagsState((prev) => {
+      const next = prev.map((t) => (t.id === id ? { ...t, active: !t.active } : t))
+      const cur = prev.find((x) => x.id === id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Alterou etiqueta',
+        description: `Etiqueta "${cur?.name || id}" alterada (ativa/inativa).`
+      })
+      return next
+    })
   }
 
   function removeTag(id) {
-    setTags((prev) => prev.filter((t) => t.id !== id))
+    setTagsState((prev) => {
+      const cur = prev.find((x) => x.id === id)
+      const next = prev.filter((t) => t.id !== id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Removeu etiqueta',
+        description: `Etiqueta "${cur?.name || id}" removida.`
+      })
+      return next
+    })
   }
 
   function onCreate() {
@@ -94,10 +114,13 @@ export default function Etiquetas() {
 
     const nextId = (Math.max(0, ...tags.map((t) => Number(t.id) || 0)) || 0) + 1
 
-    setTags((prev) => [
-      ...prev,
-      { id: nextId, name, color, active: true }
-    ])
+    setTagsState((prev) => [...prev, { id: nextId, name, color, active: true }])
+
+    logEvent(clientId, {
+      module: 'Configurações',
+      action: 'Criou etiqueta',
+      description: `Etiqueta "${name}" criada (${color}).`
+    })
 
     closeNewModal()
   }
@@ -161,11 +184,7 @@ export default function Etiquetas() {
                       >
                         {t.active ? 'Ativa' : 'Inativa'}
                       </button>
-                      <button
-                        type="button"
-                        className="pcCfgBtnGhost"
-                        onClick={() => removeTag(t.id)}
-                      >
+                      <button type="button" className="pcCfgBtnGhost" onClick={() => removeTag(t.id)}>
                         Remover
                       </button>
                     </div>
@@ -175,8 +194,7 @@ export default function Etiquetas() {
             )}
 
             <div className="pcCfgNote">
-              Próximo passo: quando você me mandar os arquivos do CRM (CRM.jsx e components),
-              eu adiciono UI para selecionar múltiplas etiquetas por contato e por negócio, e conecto na API.
+              ✅ Já integrado: as etiquetas salvas aqui agora ficam disponíveis para o CRM aplicar nos negócios.
             </div>
           </div>
         </div>
@@ -190,7 +208,7 @@ export default function Etiquetas() {
               className="pcCfgInput"
               value={formName}
               onChange={(e) => setFormName(e.target.value)}
-              placeholder="Ex: Cliente Marcelo, Comprou no site..."
+              placeholder="Ex: Cliente, Comprou no site..."
               autoFocus
             />
           </label>

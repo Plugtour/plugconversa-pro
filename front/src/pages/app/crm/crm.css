@@ -226,6 +226,16 @@
   transition:background 150ms ease, transform 120ms ease;
 }
 
+.pcCrmDots:hover,
+.pcCrmGrip:hover{
+  background:rgba(0,0,0,0.03);
+}
+
+.pcCrmDots:active,
+.pcCrmGrip:active{
+  transform:translateY(1px);
+}
+
 .pcCrmGrip{
   cursor:grab;
   font-weight:900;
@@ -244,6 +254,17 @@
   cursor:default;
   user-select:auto;
   -webkit-user-select:auto;
+}
+
+.pcCrmColBody.is-over{
+  box-shadow:0 0 0 3px rgba(0,0,0,0.06) inset;
+}
+
+.pcCrmDropPlaceholder{
+  height:44px;
+  border-radius:12px;
+  border:1px dashed rgba(0,0,0,0.25);
+  background:rgba(0,0,0,0.03);
 }
 
 .pcCrmEmpty{
@@ -310,6 +331,15 @@
   font-weight:700;
 }
 
+/* ===== Overlay (drag) ===== */
+.pcCrmCardOverlay{
+  box-shadow:0 14px 36px rgba(0,0,0,0.18);
+}
+
+.pcCrmColOverlay{
+  box-shadow:0 14px 36px rgba(0,0,0,0.18);
+}
+
 /* ===== Modal ===== */
 .pcCrmModalBackdrop{
   position:fixed;
@@ -334,8 +364,35 @@
 .pcCrmModalHeader{
   display:flex;
   justify-content:space-between;
+  align-items:center;
   padding:14px;
   border-bottom:1px solid rgba(0,0,0,0.06);
+}
+
+.pcCrmModalHeader strong{
+  font-size:14px;
+  font-weight:800;
+  color:#111;
+}
+
+.pcCrmModalX{
+  width:34px;
+  height:34px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.10);
+  background:#fff;
+  display:grid;
+  place-items:center;
+  cursor:pointer;
+  transition:background 150ms ease, transform 120ms ease;
+}
+
+.pcCrmModalX:hover{
+  background:rgba(0,0,0,0.03);
+}
+
+.pcCrmModalX:active{
+  transform:translateY(1px);
 }
 
 .pcCrmModalBody{
@@ -366,11 +423,55 @@
   gap:8px;
 }
 
+.pcCrmField > span{
+  font-size:12px;
+  font-weight:700;
+  color:rgba(0,0,0,0.70);
+}
+
 .pcCrmField input{
   height:40px;
   border-radius:12px;
   border:1px solid rgba(0,0,0,0.12);
   padding:0 12px;
+  outline:none;
+  font-size:13px;
+}
+
+.pcCrmField input:focus{
+  border-color:rgba(0,0,0,0.22);
+  box-shadow:0 0 0 3px rgba(0,0,0,0.06);
+}
+
+.pcCrmField select{
+  height:40px;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  padding:0 10px;
+  outline:none;
+  font-size:13px;
+  background:#fff;
+}
+
+.pcCrmField select:focus{
+  border-color:rgba(0,0,0,0.22);
+  box-shadow:0 0 0 3px rgba(0,0,0,0.06);
+}
+
+.pcCrmField textarea{
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  padding:10px 12px;
+  outline:none;
+  font-size:13px;
+  line-height:1.35;
+  resize:vertical;
+  min-height:90px;
+}
+
+.pcCrmField textarea:focus{
+  border-color:rgba(0,0,0,0.22);
+  box-shadow:0 0 0 3px rgba(0,0,0,0.06);
 }
 
 .pcCrmColorRow{
@@ -379,10 +480,21 @@
   align-items:center;
 }
 
+.pcCrmColorRow input[type="color"]{
+  width:46px;
+  height:40px;
+  padding:0;
+  border-radius:12px;
+  border:1px solid rgba(0,0,0,0.12);
+  background:#fff;
+  cursor:pointer;
+}
+
 .pcCrmModalActions{
   display:flex;
   justify-content:flex-end;
   gap:10px;
+  margin-top:2px;
 }
 
 .pcCrmModalActions button{
@@ -393,11 +505,35 @@
   background:#fff;
   cursor:pointer;
   font-weight:700;
+  transition:background 150ms ease, transform 120ms ease;
+}
+
+.pcCrmModalActions button:hover{
+  background:rgba(0,0,0,0.03);
+}
+
+.pcCrmModalActions button:active{
+  transform:translateY(1px);
 }
 
 .pcCrmModalActions button.pcBtnPrimary{
   background:#111;
   color:#fff;
+}
+
+.pcCrmModalActions button.pcBtnPrimary:hover{
+  background:#0b0b0b;
+}
+
+/* ===== Detalhes (checkbox) - padrão visual ===== */
+.pcCrmModalBody label{
+  font-size:13px;
+}
+
+.pcCrmModalBody input[type="checkbox"]{
+  width:16px;
+  height:16px;
+  accent-color:#111;
 }
 
 /* fim: front/src/pages/app/crm/crm.css */

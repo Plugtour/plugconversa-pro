@@ -1,6 +1,7 @@
 // caminho: front/src/pages/app/configuracoes/respostas-rapidas/RespostasRapidas.jsx
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './respostas-rapidas.css'
+import { getQuickReplies, setQuickReplies, logEvent } from '../../../../services/appStore'
 
 function normalize(v) {
   return String(v || '').trim()
@@ -18,7 +19,9 @@ function ModalBase({ open, title, children, onClose }) {
       <div className="pcCfgModal" onMouseDown={(e) => e.stopPropagation()}>
         <div className="pcCfgModalHeader">
           <h3>{title}</h3>
-          <button className="pcCfgIconBtn" onClick={onClose}>✕</button>
+          <button type="button" className="pcCfgIconBtn" onClick={onClose} aria-label="Fechar">
+            ✕
+          </button>
         </div>
         <div className="pcCfgModalBody">{children}</div>
       </div>
@@ -27,25 +30,19 @@ function ModalBase({ open, title, children, onClose }) {
 }
 
 export default function RespostasRapidas() {
-  const [items, setItems] = useState([
-    {
-      id: 1,
-      name: 'Boas-vindas',
-      shortcut: '/boasvindas',
-      message: 'Olá {{nome}}, tudo bem? Seja bem-vindo(a)! 😊',
-      active: true
-    }
-  ])
+  const clientId = 1
+
+  const [items, setItemsState] = useState(() => getQuickReplies(clientId))
+
+  useEffect(() => {
+    setQuickReplies(clientId, items)
+  }, [clientId, items])
 
   const [q, setQ] = useState('')
   const filtered = useMemo(() => {
     const qq = lower(q)
     if (!qq) return items
-    return items.filter(
-      (i) =>
-        lower(i.name).includes(qq) ||
-        lower(i.shortcut).includes(qq)
-    )
+    return items.filter((i) => lower(i.name).includes(qq) || lower(i.shortcut).includes(qq))
   }, [items, q])
 
   const [open, setOpen] = useState(false)
@@ -67,15 +64,29 @@ export default function RespostasRapidas() {
   }
 
   function toggleActive(id) {
-    setItems((prev) =>
-      prev.map((i) =>
-        i.id === id ? { ...i, active: !i.active } : i
-      )
-    )
+    setItemsState((prev) => {
+      const next = prev.map((i) => (i.id === id ? { ...i, active: !i.active } : i))
+      const cur = prev.find((x) => x.id === id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Alterou resposta rápida',
+        description: `Resposta "${cur?.name || id}" alterada (ativa/inativa).`
+      })
+      return next
+    })
   }
 
   function removeItem(id) {
-    setItems((prev) => prev.filter((i) => i.id !== id))
+    setItemsState((prev) => {
+      const cur = prev.find((x) => x.id === id)
+      const next = prev.filter((i) => i.id !== id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Removeu resposta rápida',
+        description: `Resposta "${cur?.name || id}" removida.`
+      })
+      return next
+    })
   }
 
   function onCreate() {
@@ -93,22 +104,21 @@ export default function RespostasRapidas() {
       return
     }
 
-    const exists = items.some(
-      (i) => lower(i.shortcut) === lower(shortcut)
-    )
-
+    const exists = items.some((i) => lower(i.shortcut) === lower(shortcut))
     if (exists) {
       setErr('Já existe uma resposta com esse atalho.')
       return
     }
 
-    const nextId =
-      Math.max(0, ...items.map((i) => i.id)) + 1
+    const nextId = Math.max(0, ...items.map((i) => Number(i.id) || 0)) + 1
 
-    setItems((prev) => [
-      ...prev,
-      { id: nextId, name, shortcut, message, active: true }
-    ])
+    setItemsState((prev) => [...prev, { id: nextId, name, shortcut, message, active: true }])
+
+    logEvent(clientId, {
+      module: 'Configurações',
+      action: 'Criou resposta rápida',
+      description: `Resposta "${name}" criada (${shortcut}).`
+    })
 
     closeModal()
   }
@@ -137,7 +147,7 @@ export default function RespostasRapidas() {
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
               />
-              <button className="pcCfgBtnPrimary" onClick={openModal}>
+              <button type="button" className="pcCfgBtnPrimary" onClick={openModal}>
                 Nova resposta
               </button>
             </div>
@@ -148,36 +158,32 @@ export default function RespostasRapidas() {
               <div key={item.id} className="pcCfgQuickCard">
                 <div className="pcCfgQuickTop">
                   <div>
-                    <div className="pcCfgQuickName">
-                      {item.name}
-                    </div>
-                    <div className="pcCfgQuickShortcut">
-                      {item.shortcut}
-                    </div>
+                    <div className="pcCfgQuickName">{item.name}</div>
+                    <div className="pcCfgQuickShortcut">{item.shortcut}</div>
                   </div>
 
                   <div className="pcCfgQuickActions">
                     <button
+                      type="button"
                       className={`pcCfgPillBtn${item.active ? ' on' : ''}`}
                       onClick={() => toggleActive(item.id)}
                     >
                       {item.active ? 'Ativa' : 'Inativa'}
                     </button>
 
-                    <button
-                      className="pcCfgBtnGhost"
-                      onClick={() => removeItem(item.id)}
-                    >
+                    <button type="button" className="pcCfgBtnGhost" onClick={() => removeItem(item.id)}>
                       Remover
                     </button>
                   </div>
                 </div>
 
-                <div className="pcCfgQuickMessage">
-                  {item.message}
-                </div>
+                <div className="pcCfgQuickMessage">{item.message}</div>
               </div>
             ))}
+          </div>
+
+          <div className="pcCfgNote">
+            ✅ Já integrado: o Inbox vai sugerir e expandir atalhos do tipo <b>/boasvindas</b> com variáveis.
           </div>
         </div>
       </div>
@@ -189,9 +195,7 @@ export default function RespostasRapidas() {
             <input
               className="pcCfgInput"
               value={form.name}
-              onChange={(e) =>
-                setForm({ ...form, name: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
             />
           </label>
 
@@ -201,9 +205,7 @@ export default function RespostasRapidas() {
               className="pcCfgInput"
               placeholder="/boasvindas"
               value={form.shortcut}
-              onChange={(e) =>
-                setForm({ ...form, shortcut: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, shortcut: e.target.value })}
             />
           </label>
 
@@ -213,25 +215,23 @@ export default function RespostasRapidas() {
               className="pcCfgTextarea"
               rows={5}
               value={form.message}
-              onChange={(e) =>
-                setForm({ ...form, message: e.target.value })
-              }
+              onChange={(e) => setForm({ ...form, message: e.target.value })}
             />
           </label>
 
           <div className="pcCfgVariablesHint">
             Variáveis disponíveis:
             <br />
-            {'{{nome}}'} {'{{telefone}}'} {'{{etiquetas}}'} {'{{data_chegada}}'} {'{{data_saida}}'}
+            {'{{nome}}'} {'{{empresa}}'} {'{{telefone}}'}
           </div>
 
           {err && <div className="pcCfgError">{err}</div>}
 
           <div className="pcCfgFormActions">
-            <button className="pcCfgBtnGhost" onClick={closeModal}>
+            <button type="button" className="pcCfgBtnGhost" onClick={closeModal}>
               Cancelar
             </button>
-            <button className="pcCfgBtnPrimary" onClick={onCreate}>
+            <button type="button" className="pcCfgBtnPrimary" onClick={onCreate}>
               Criar
             </button>
           </div>

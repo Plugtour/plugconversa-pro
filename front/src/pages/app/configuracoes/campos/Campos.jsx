@@ -1,6 +1,7 @@
 // caminho: front/src/pages/app/configuracoes/campos/Campos.jsx
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import './campos.css'
+import { getFields, setFields, logEvent } from '../../../../services/appStore'
 
 const FIELD_TYPES = [
   { value: 'text', label: 'Texto' },
@@ -49,12 +50,13 @@ function ModalBase({ open, title, children, onClose }) {
 }
 
 export default function Campos() {
-  const [fields, setFields] = useState(() => [
-    { id: 1, name: 'Nome', type: 'text', required: true, active: true, options: [] },
-    { id: 2, name: 'Telefone', type: 'phone', required: false, active: true, options: [] },
-    { id: 3, name: 'Data da chegada', type: 'date', required: false, active: true, options: [] },
-    { id: 4, name: 'Data da saída', type: 'date', required: false, active: true, options: [] }
-  ])
+  const clientId = 1
+
+  const [fields, setFieldsState] = useState(() => getFields(clientId))
+
+  useEffect(() => {
+    setFields(clientId, fields)
+  }, [clientId, fields])
 
   const [q, setQ] = useState('')
   const filtered = useMemo(() => {
@@ -89,19 +91,42 @@ export default function Campos() {
   }
 
   function toggleActive(id) {
-    setFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, active: !f.active } : f))
-    )
+    setFieldsState((prev) => {
+      const next = prev.map((f) => (f.id === id ? { ...f, active: !f.active } : f))
+      const cur = prev.find((x) => x.id === id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Alterou campo',
+        description: `Campo "${cur?.name || id}" alterado (ativo/inativo).`
+      })
+      return next
+    })
   }
 
   function toggleRequired(id) {
-    setFields((prev) =>
-      prev.map((f) => (f.id === id ? { ...f, required: !f.required } : f))
-    )
+    setFieldsState((prev) => {
+      const next = prev.map((f) => (f.id === id ? { ...f, required: !f.required } : f))
+      const cur = prev.find((x) => x.id === id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Alterou campo',
+        description: `Campo "${cur?.name || id}" alterado (obrigatório).`
+      })
+      return next
+    })
   }
 
   function removeField(id) {
-    setFields((prev) => prev.filter((f) => f.id !== id))
+    setFieldsState((prev) => {
+      const cur = prev.find((x) => x.id === id)
+      const next = prev.filter((f) => f.id !== id)
+      logEvent(clientId, {
+        module: 'Configurações',
+        action: 'Removeu campo',
+        description: `Campo "${cur?.name || id}" removido.`
+      })
+      return next
+    })
   }
 
   function onCreate() {
@@ -139,7 +164,7 @@ export default function Campos() {
 
     const nextId = (Math.max(0, ...fields.map((f) => Number(f.id) || 0)) || 0) + 1
 
-    setFields((prev) => [
+    setFieldsState((prev) => [
       ...prev,
       {
         id: nextId,
@@ -150,6 +175,12 @@ export default function Campos() {
         options
       }
     ])
+
+    logEvent(clientId, {
+      module: 'Configurações',
+      action: 'Criou campo',
+      description: `Campo "${name}" criado (${typeLabel(type)}).`
+    })
 
     closeNewModal()
   }
@@ -186,9 +217,7 @@ export default function Campos() {
 
           <div className="pcCardBody">
             {filtered.length === 0 ? (
-              <div className="pcCfgEmpty">
-                Nenhum campo encontrado.
-              </div>
+              <div className="pcCfgEmpty">Nenhum campo encontrado.</div>
             ) : (
               <div className="pcCfgTable">
                 <div className="pcCfgRow pcCfgRowHead">
@@ -204,9 +233,7 @@ export default function Campos() {
                     <div className="pcCfgName">
                       <div className="pcCfgNameTop">{f.name}</div>
                       {isSelectType(f.type) && (
-                        <div className="pcCfgMeta">
-                          {f.options?.length || 0} opções
-                        </div>
+                        <div className="pcCfgMeta">{f.options?.length || 0} opções</div>
                       )}
                     </div>
 
@@ -235,11 +262,7 @@ export default function Campos() {
                     </div>
 
                     <div className="pcCfgRight">
-                      <button
-                        type="button"
-                        className="pcCfgBtnGhost"
-                        onClick={() => removeField(f.id)}
-                      >
+                      <button type="button" className="pcCfgBtnGhost" onClick={() => removeField(f.id)}>
                         Remover
                       </button>
                     </div>
@@ -249,8 +272,7 @@ export default function Campos() {
             )}
 
             <div className="pcCfgNote">
-              Próximo passo: quando você me mandar os arquivos do CRM (CRM.jsx e components), eu faço os
-              campos criados aqui aparecerem no CRM (card e/ou painel de detalhes), e conecto na API.
+              ✅ Já integrado: os campos salvos aqui agora ficam disponíveis para o CRM renderizar dinamicamente.
             </div>
           </div>
         </div>

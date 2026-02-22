@@ -1,6 +1,7 @@
 // caminho: front/src/pages/app/configuracoes/registros/Registros.jsx
 import { useMemo, useState } from 'react'
 import './registros.css'
+import { getLogs } from '../../../../services/appStore'
 
 function formatDate(d) {
   const dt = new Date(d)
@@ -8,46 +9,32 @@ function formatDate(d) {
 }
 
 export default function Registros() {
-  const [logs] = useState([
-    {
-      id: 1,
-      user: 'Marcelo',
-      module: 'CRM',
-      action: 'Criou negócio',
-      description: 'Novo negócio criado na coluna Leads',
-      date: new Date(),
-      ip: '192.168.0.10'
-    },
-    {
-      id: 2,
-      user: 'Atendente 01',
-      module: 'Campanhas',
-      action: 'Enviou campanha',
-      description: 'Campanha Black Friday enviada',
-      date: new Date(),
-      ip: '192.168.0.12'
-    }
-  ])
+  const clientId = 1
+
+  // ✅ lê do store (eventos reais do sistema)
+  const [logs] = useState(() => getLogs(clientId))
 
   const [search, setSearch] = useState('')
   const [moduleFilter, setModuleFilter] = useState('')
 
   const filteredLogs = useMemo(() => {
     return logs.filter((log) => {
-      const matchSearch =
-        !search ||
-        log.user.toLowerCase().includes(search.toLowerCase()) ||
-        log.module.toLowerCase().includes(search.toLowerCase()) ||
-        log.action.toLowerCase().includes(search.toLowerCase())
+      const s = String(search || '').toLowerCase()
 
-      const matchModule =
-        !moduleFilter || log.module === moduleFilter
+      const matchSearch =
+        !s ||
+        String(log.user || '').toLowerCase().includes(s) ||
+        String(log.module || '').toLowerCase().includes(s) ||
+        String(log.action || '').toLowerCase().includes(s) ||
+        String(log.description || '').toLowerCase().includes(s)
+
+      const matchModule = !moduleFilter || log.module === moduleFilter
 
       return matchSearch && matchModule
     })
   }, [logs, search, moduleFilter])
 
-  const modules = [...new Set(logs.map((l) => l.module))]
+  const modules = [...new Set(logs.map((l) => l.module).filter(Boolean))]
 
   return (
     <div className="pcCfgPage">
@@ -62,7 +49,7 @@ export default function Registros() {
             <div className="pcLogsFilters">
               <input
                 className="pcCfgInput"
-                placeholder="Buscar usuário, módulo ou ação..."
+                placeholder="Buscar usuário, módulo, ação ou texto..."
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
               />
@@ -84,9 +71,7 @@ export default function Registros() {
 
           <div className="pcCardBody">
             {filteredLogs.length === 0 ? (
-              <div className="pcCfgEmpty">
-                Nenhum registro encontrado.
-              </div>
+              <div className="pcCfgEmpty">Nenhum registro encontrado.</div>
             ) : (
               <div className="pcLogsTable">
                 {filteredLogs.map((log) => (
@@ -100,14 +85,10 @@ export default function Registros() {
 
                     <div className="pcLogsAction">
                       <strong>{log.action}</strong>
-                      <div className="pcLogsDesc">
-                        {log.description}
-                      </div>
+                      <div className="pcLogsDesc">{log.description}</div>
                     </div>
 
-                    <div className="pcLogsDate">
-                      {formatDate(log.date)}
-                    </div>
+                    <div className="pcLogsDate">{formatDate(log.date)}</div>
                   </div>
                 ))}
               </div>
