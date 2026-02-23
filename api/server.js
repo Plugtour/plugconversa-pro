@@ -24,21 +24,60 @@ app.use(
   })
 )
 
+function isReqLocalhost(req) {
+  const host = String(req.headers.host || '')
+  const hostname = String(req.hostname || '')
+  return (
+    host.includes('localhost') ||
+    host.includes('127.0.0.1') ||
+    hostname === 'localhost' ||
+    hostname === '127.0.0.1'
+  )
+}
 
 // ===== DEV fallback client_id (apenas localhost) =====
 app.use((req, res, next) => {
   const h = req.headers['x-client-id']
-  const host = String(req.headers.host || '')
-  const isLocalhost =
-    host.includes('localhost') ||
-    host.includes('127.0.0.1') ||
-    req.hostname === 'localhost' ||
-    req.hostname === '127.0.0.1'
+  const isLocalhost = isReqLocalhost(req)
 
   // Se não veio header, assume 1 somente em DEV/local
   if ((!h || String(h).trim() === '') && isLocalhost) {
     req.headers['x-client-id'] = '1'
   }
+
+  next()
+})
+
+// ===== Normaliza clientId no req + valida =====
+app.use((req, res, next) => {
+  const raw = req.headers['x-client-id']
+  const isLocalhost = isReqLocalhost(req)
+
+  // em produção, se não vier, bloqueia (evita vazar dados entre tenants)
+  if (!raw || String(raw).trim() === '') {
+    if (!isLocalhost) {
+      return res.status(400).json({
+        ok: false,
+        error: 'missing_client_id',
+        message: 'Header x-client-id é obrigatório.'
+      })
+    }
+  }
+
+  const cid = Number(String(raw || '').trim())
+  if (!Number.isFinite(cid) || cid <= 0) {
+    return res.status(400).json({
+      ok: false,
+      error: 'invalid_client_id',
+      message: 'Header x-client-id inválido.'
+    })
+  }
+
+  // deixa disponível para as rotas
+  req.clientId = cid
+
+  // espelha no response (debug/inspeção)
+  res.setHeader('x-client-id', String(cid))
 
   next()
 })

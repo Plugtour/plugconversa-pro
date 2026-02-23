@@ -1,7 +1,7 @@
 // caminho: front/src/pages/app/configuracoes/etiquetas/Etiquetas.jsx
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import './etiquetas.css'
-import { getTags, setTags, logEvent } from '../../../../services/appStore'
+import { apiDel, apiGet, apiPost, apiPut } from '../../../../services/api'
 
 function normalizeName(v) {
   return String(v || '').trim().replace(/\s+/g, ' ')
@@ -15,6 +15,45 @@ function clampHexColor(v) {
   const s = String(v || '').trim()
   if (/^#[0-9a-fA-F]{6}$/.test(s)) return s.toUpperCase()
   return '#2563EB'
+}
+
+function pickArrayFromPayload(payload) {
+  if (!payload) return []
+  if (Array.isArray(payload)) return payload
+  if (payload.ok && Array.isArray(payload.data)) return payload.data
+  if (payload.ok && Array.isArray(payload.items)) return payload.items
+  if (payload.ok && Array.isArray(payload.tags)) return payload.tags
+  if (Array.isArray(payload.data)) return payload.data
+  return []
+}
+
+function pickOneFromPayload(payload) {
+  if (!payload) return null
+  if (payload.ok && payload.data && typeof payload.data === 'object') return payload.data
+  if (payload.ok && payload.tag && typeof payload.tag === 'object') return payload.tag
+  if (payload.data && typeof payload.data === 'object') return payload.data
+  if (typeof payload === 'object') return payload
+  return null
+}
+
+function getErrText(err) {
+  const status = err?.status
+  const payload = err?.payload
+  const msg =
+    (payload && typeof payload === 'object' && (payload.message || payload.error)) || err?.message || 'erro'
+  return status ? `${msg} (HTTP ${status})` : msg
+}
+
+function normalizeTag(raw) {
+  const t = raw && typeof raw === 'object' ? raw : {}
+  const id = Number(t?.id ?? t?.tag_id ?? t?.tagId)
+  return {
+    id: Number.isFinite(id) ? id : 0,
+    name: normalizeName(t?.name || ''),
+    color: clampHexColor(t?.color || '#2563EB'),
+    active: t?.active === undefined ? true : !!t.active,
+    ai_profile: t?.ai_profile ?? t?.aiProfile ?? null
+  }
 }
 
 function ModalBase({ open, title, children, onClose }) {
@@ -38,11 +77,10 @@ function ModalBase({ open, title, children, onClose }) {
 export default function Etiquetas() {
   const clientId = 1
 
-  const [tags, setTagsState] = useState(() => getTags(clientId))
+  const [loading, setLoading] = useState(true)
+  const [loadErr, setLoadErr] = useState('')
 
-  useEffect(() => {
-    setTags(clientId, tags)
-  }, [clientId, tags])
+  const [tags, setTagsState] = useState([])
 
   const [q, setQ] = useState('')
   const filtered = useMemo(() => {
@@ -55,6 +93,33 @@ export default function Etiquetas() {
   const [formName, setFormName] = useState('')
   const [formColor, setFormColor] = useState('#2563EB')
   const [err, setErr] = useState('')
+  const [saving, setSaving] = useState(false)
+
+  // trava re-render na carga
+  const didLoadRef = useRef(false)
+
+  async function fetchTags() {
+    setLoading(true)
+    setLoadErr('')
+    try {
+      const payload = await apiGet('/tags', { clientId })
+      const arr = pickArrayFromPayload(payload).map(normalizeTag).filter((t) => t.id > 0)
+      // ordena por nome pra ficar previsível
+      arr.sort((a, b) => String(a.name).localeCompare(String(b.name)))
+      setTagsState(arr)
+    } catch (e) {
+      setLoadErr(getErrText(e))
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  useEffect(() => {
+    if (didLoadRef.current) return
+    didLoadRef.current = true
+    fetchTags()
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [])
 
   function resetForm() {
     setFormName('')
@@ -68,38 +133,64 @@ export default function Etiquetas() {
   }
 
   function closeNewModal() {
+    if (saving) return
     setOpenNew(false)
   }
 
-  function toggleActive(id) {
-    setTagsState((prev) => {
-      const next = prev.map((t) => (t.id === id ? { ...t, active: !t.active } : t))
-      const cur = prev.find((x) => x.id === id)
-      logEvent(clientId, {
-        module: 'Configurações',
-        action: 'Alterou etiqueta',
-        description: `Etiqueta "${cur?.name || id}" alterada (ativa/inativa).`
-      })
-      return next
-    })
+  async function toggleActive(t) {
+    const id = Number(t?.id)
+    if (!Number.isFinite(id) || id <= 0) return
+
+    const nextActive = !t.active
+
+    // otimista
+    setTagsState((prev) => prev.map((x) => (x.id === id ? { ...x, active: nextActive } : x)))
+
+    try {
+      // preferimos PUT por ser o helper disponível e comum no seu backend
+      const payload = await apiPut(`/tags/${id}`, { active: nextActive }, { clientId })
+      const updated = pickOneFromPayload(payload)
+      if (updated && typeof updated === 'object') {
+        const norm = normalizeTag(updated)
+        if (norm.id > 0) {
+          setTagsState((prev) => prev.map((x) => (x.id === id ? { ...x, ...norm } : x)))
+        } else {
+          // se não veio tag, recarrega
+          await fetchTags()
+        }
+      }
+    } catch (e) {
+      // rollback
+      setTagsState((prev) => prev.map((x) => (x.id === id ? { ...x, active: !nextActive } : x)))
+      alert(`Erro ao alterar etiqueta: ${getErrText(e)}`)
+    }
   }
 
-  function removeTag(id) {
-    setTagsState((prev) => {
-      const cur = prev.find((x) => x.id === id)
-      const next = prev.filter((t) => t.id !== id)
-      logEvent(clientId, {
-        module: 'Configurações',
-        action: 'Removeu etiqueta',
-        description: `Etiqueta "${cur?.name || id}" removida.`
-      })
-      return next
-    })
+  async function removeTag(t) {
+    const id = Number(t?.id)
+    if (!Number.isFinite(id) || id <= 0) return
+
+    const ok = window.confirm(`Remover a etiqueta "${t?.name || id}"?`)
+    if (!ok) return
+
+    // otimista
+    const snapshot = tags
+    setTagsState((prev) => prev.filter((x) => x.id !== id))
+
+    try {
+      await apiDel(`/tags/${id}`, { clientId })
+    } catch (e) {
+      // rollback
+      setTagsState(snapshot)
+      alert(`Erro ao remover etiqueta: ${getErrText(e)}`)
+    }
   }
 
-  function onCreate() {
+  async function onCreate() {
     const name = normalizeName(formName)
     const color = clampHexColor(formColor)
+
+    setErr('')
 
     if (!name) {
       setErr('Informe o nome da etiqueta.')
@@ -112,17 +203,40 @@ export default function Etiquetas() {
       return
     }
 
-    const nextId = (Math.max(0, ...tags.map((t) => Number(t.id) || 0)) || 0) + 1
+    setSaving(true)
+    try {
+      const payload = await apiPost(
+        '/tags',
+        {
+          name,
+          color,
+          active: true
+        },
+        { clientId }
+      )
 
-    setTagsState((prev) => [...prev, { id: nextId, name, color, active: true }])
+      const created = pickOneFromPayload(payload)
+      if (created && typeof created === 'object') {
+        const norm = normalizeTag(created)
+        if (norm.id > 0) {
+          setTagsState((prev) => {
+            const next = [...prev, norm]
+            next.sort((a, b) => String(a.name).localeCompare(String(b.name)))
+            return next
+          })
+        } else {
+          await fetchTags()
+        }
+      } else {
+        await fetchTags()
+      }
 
-    logEvent(clientId, {
-      module: 'Configurações',
-      action: 'Criou etiqueta',
-      description: `Etiqueta "${name}" criada (${color}).`
-    })
-
-    closeNewModal()
+      closeNewModal()
+    } catch (e) {
+      setErr(getErrText(e))
+    } finally {
+      setSaving(false)
+    }
   }
 
   return (
@@ -148,15 +262,27 @@ export default function Etiquetas() {
                 placeholder="Buscar etiqueta..."
                 value={q}
                 onChange={(e) => setQ(e.target.value)}
+                disabled={loading}
               />
-              <button type="button" className="pcCfgBtnPrimary" onClick={openNewModal}>
+              <button type="button" className="pcCfgBtnPrimary" onClick={openNewModal} disabled={loading}>
                 Nova etiqueta
               </button>
             </div>
           </div>
 
           <div className="pcCardBody">
-            {filtered.length === 0 ? (
+            {loading ? (
+              <div className="pcCfgEmpty">Carregando etiquetas...</div>
+            ) : loadErr ? (
+              <div className="pcCfgEmpty" style={{ borderStyle: 'solid', borderColor: 'rgba(239,68,68,.35)' }}>
+                Erro ao carregar: <b>{loadErr}</b>
+                <div style={{ marginTop: 10 }}>
+                  <button type="button" className="pcCfgBtnGhost" onClick={fetchTags}>
+                    Tentar novamente
+                  </button>
+                </div>
+              </div>
+            ) : filtered.length === 0 ? (
               <div className="pcCfgEmpty">Nenhuma etiqueta encontrada.</div>
             ) : (
               <div className="pcCfgTagGrid">
@@ -167,9 +293,7 @@ export default function Etiquetas() {
                       <div className="pcCfgTagText">
                         <div className="pcCfgTagName">{t.name}</div>
                         <div className="pcCfgTagMeta">
-                          <span className={`pcCfgStatus${t.active ? ' on' : ''}`}>
-                            {t.active ? 'Ativa' : 'Inativa'}
-                          </span>
+                          <span className={`pcCfgStatus${t.active ? ' on' : ''}`}>{t.active ? 'Ativa' : 'Inativa'}</span>
                           <span className="pcCfgHex">{t.color}</span>
                         </div>
                       </div>
@@ -179,12 +303,12 @@ export default function Etiquetas() {
                       <button
                         type="button"
                         className={`pcCfgPillBtn${t.active ? ' on' : ''}`}
-                        onClick={() => toggleActive(t.id)}
+                        onClick={() => toggleActive(t)}
                         title="Alternar ativo"
                       >
                         {t.active ? 'Ativa' : 'Inativa'}
                       </button>
-                      <button type="button" className="pcCfgBtnGhost" onClick={() => removeTag(t.id)}>
+                      <button type="button" className="pcCfgBtnGhost" onClick={() => removeTag(t)}>
                         Remover
                       </button>
                     </div>
@@ -194,7 +318,7 @@ export default function Etiquetas() {
             )}
 
             <div className="pcCfgNote">
-              ✅ Já integrado: as etiquetas salvas aqui agora ficam disponíveis para o CRM aplicar nos negócios.
+              ✅ Agora as etiquetas são salvas no banco via <b>/api/tags</b> e ficam disponíveis no filtro de Contatos.
             </div>
           </div>
         </div>
@@ -210,6 +334,7 @@ export default function Etiquetas() {
               onChange={(e) => setFormName(e.target.value)}
               placeholder="Ex: Cliente, Comprou no site..."
               autoFocus
+              disabled={saving}
             />
           </label>
 
@@ -223,12 +348,14 @@ export default function Etiquetas() {
                   value={clampHexColor(formColor)}
                   onChange={(e) => setFormColor(e.target.value)}
                   aria-label="Selecionar cor"
+                  disabled={saving}
                 />
                 <input
                   className="pcCfgInput pcCfgHexInput"
                   value={formColor}
                   onChange={(e) => setFormColor(e.target.value)}
                   placeholder="#2563EB"
+                  disabled={saving}
                 />
               </div>
             </label>
@@ -245,11 +372,11 @@ export default function Etiquetas() {
           {err && <div className="pcCfgError">{err}</div>}
 
           <div className="pcCfgFormActions">
-            <button type="button" className="pcCfgBtnGhost" onClick={closeNewModal}>
+            <button type="button" className="pcCfgBtnGhost" onClick={closeNewModal} disabled={saving}>
               Cancelar
             </button>
-            <button type="button" className="pcCfgBtnPrimary" onClick={onCreate}>
-              Criar etiqueta
+            <button type="button" className="pcCfgBtnPrimary" onClick={onCreate} disabled={saving}>
+              {saving ? 'Criando...' : 'Criar etiqueta'}
             </button>
           </div>
         </div>

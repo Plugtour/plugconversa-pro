@@ -10,4 +10,104 @@
   font-size: 14px;
 }
 
+/* ✅ área maior para seleção (primeira coluna) */
+.pcCtSelectCell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 42px;
+}
+
+/* ✅ área clicável grande, porém invisível */
+.pcCtSelectHit {
+  appearance: none;
+  border: 1px solid transparent;
+  background: transparent;
+  border-radius: 10px;
+  width: 34px;
+  height: 30px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  padding: 0;
+}
+
+.pcCtSelectHit:hover {
+  background: transparent;
+  border-color: transparent;
+}
+
+.pcCtSelectHit:active {
+  transform: translateY(0.5px);
+}
+
+/* =========================================
+   ✅ Checkbox custom (padronizado e bonito)
+   - funciona no header e nas linhas
+   - mantém o clique no botão (input não captura clique)
+========================================= */
+.pcCtSelectHit input[type='checkbox'] {
+  pointer-events: none; /* clique fica no botão */
+  appearance: none;
+  -webkit-appearance: none;
+  -moz-appearance: none;
+
+  width: 18px;
+  height: 18px;
+  border-radius: 6px; /* arredondado */
+  border: 1px solid rgba(0, 0, 0, 0.22);
+  background: #fff;
+
+  display: inline-grid;
+  place-content: center;
+
+  transition: 0.15s ease;
+  box-shadow: 0 1px 0 rgba(0, 0, 0, 0.03);
+}
+
+/* hover “suave” quando passa em cima do botão */
+.pcCtSelectHit:hover input[type='checkbox'] {
+  border-color: rgba(37, 99, 235, 0.35);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.08);
+}
+
+/* ✅ checked */
+.pcCtSelectHit input[type='checkbox']:checked {
+  border-color: rgba(37, 99, 235, 0.75);
+  background: rgba(37, 99, 235, 1);
+}
+
+/* ✅ checkmark */
+.pcCtSelectHit input[type='checkbox']:checked::after {
+  content: '';
+  width: 9px;
+  height: 5px;
+  border-left: 2px solid #fff;
+  border-bottom: 2px solid #fff;
+  transform: rotate(-45deg);
+  margin-top: -1px;
+}
+
+/* ✅ indeterminate (checkbox do header quando parcial) */
+.pcCtSelectHit input[type='checkbox']:indeterminate {
+  border-color: rgba(37, 99, 235, 0.55);
+  background: rgba(37, 99, 235, 0.18);
+}
+
+.pcCtSelectHit input[type='checkbox']:indeterminate::after {
+  content: '';
+  width: 10px;
+  height: 2px;
+  background: rgba(37, 99, 235, 0.95);
+  border-radius: 2px;
+}
+
+/* foco acessível quando navega por teclado */
+.pcCtSelectHit:focus-visible {
+  outline: none;
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.18);
+  border-radius: 10px;
+}
+
 /* fim: front/src/pages/app/contatos/contatos.css */

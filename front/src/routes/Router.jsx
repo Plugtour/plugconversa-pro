@@ -7,6 +7,7 @@ import QueroSerCliente from '../pages/public/quero-ser-cliente/QueroSerCliente.j
 import AppShell from '../shared/layout/AppShell.jsx'
 import Dashboard from '../pages/app/dashboard/Dashboard.jsx'
 import Contatos from '../pages/app/contatos/Contatos.jsx'
+import ContatoDetalhe from '../pages/app/contatos/ContatoDetalhe.jsx'
 import Campanhas from '../pages/app/campanhas/Campanhas.jsx'
 import Automacao from '../pages/app/automacao/Automacao.jsx'
 import Inbox from '../pages/app/inbox/Inbox.jsx'
@@ -108,7 +109,11 @@ function Router() {
           </Route>
 
           <Route path="suporte" element={<Suporte />} />
+
+          {/* ✅ Contatos */}
           <Route path="contatos" element={<Contatos />} />
+          <Route path="contatos/:id" element={<ContatoDetalhe />} />
+
           <Route path="campanhas" element={<Campanhas />} />
           <Route path="automacao" element={<Automacao />} />
         </Route>
