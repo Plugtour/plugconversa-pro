@@ -12,8 +12,9 @@ const contactsRoutes = require('./contacts.routes')
 const tagsRoutes = require('./tags.routes')
 const kanbanRoutes = require('./kanban.routes')
 const flowRoutes = require('./flow.routes')
+const inboxRoutes = require('./inbox.routes') // ✅ NOVO
 
-// ✅ debug simples pra confirmar mounts carregados
+// debug mounts
 const mounts = []
 function mount(path, mod) {
   mounts.push(path)
@@ -35,7 +36,7 @@ router.get('/_debug/mounts', (req, res) => {
   return res.json({ ok: true, mounts })
 })
 
-// debug rotas (lista o que estiver registrado no router)
+// debug rotas
 router.get('/_debug/routes', (req, res) => {
   const routes = []
   for (const layer of router.stack || []) {
@@ -52,6 +53,7 @@ mount('/contacts', contactsRoutes)
 mount('/tags', tagsRoutes)
 mount('/kanban', kanbanRoutes)
 mount('/flow', flowRoutes)
+mount('/inbox', inboxRoutes) // ✅ NOVO
 
 module.exports = router
 // fim: api/routes/index.js
