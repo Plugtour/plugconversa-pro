@@ -12,7 +12,8 @@ const contactsRoutes = require('./contacts.routes')
 const tagsRoutes = require('./tags.routes')
 const kanbanRoutes = require('./kanban.routes')
 const flowRoutes = require('./flow.routes')
-const inboxRoutes = require('./inbox.routes') // ✅ NOVO
+const inboxRoutes = require('./inbox.routes')
+const whatsappRoutes = require('./whatsapp.routes') // ✅ NOVO
 
 // debug mounts
 const mounts = []
@@ -53,7 +54,8 @@ mount('/contacts', contactsRoutes)
 mount('/tags', tagsRoutes)
 mount('/kanban', kanbanRoutes)
 mount('/flow', flowRoutes)
-mount('/inbox', inboxRoutes) // ✅ NOVO
+mount('/inbox', inboxRoutes)
+mount('/whatsapp', whatsappRoutes) // ✅ NOVO
 
 module.exports = router
 // fim: api/routes/index.js

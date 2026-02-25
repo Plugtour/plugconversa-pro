@@ -9,8 +9,43 @@ const apiRouter = require('./routes')
 
 const app = express()
 
+// =========================
+// WhatsApp Webhook precisa do RAW body p/ validar assinatura (X-Hub-Signature-256)
+// e também NÃO envia x-client-id.
+// Então:
+// - para /api/whatsapp/webhook: usa express.raw e faz parse manual do JSON
+// - para o resto: express.json normal
+// =========================
+function isWebhookPath(req) {
+  const url = String(req.originalUrl || '')
+  return url.startsWith('/api/whatsapp/webhook')
+}
+
+app.use((req, res, next) => {
+  if (!isWebhookPath(req)) return next()
+
+  return express.raw({ type: 'application/json', limit: '2mb' })(req, res, () => {
+    // guarda rawBody para assinatura
+    req.rawBody = req.body
+
+    // parse JSON para req.body (obj)
+    try {
+      const buf = req.rawBody
+      const txt = buf && buf.length ? buf.toString('utf8') : ''
+      req.body = txt ? JSON.parse(txt) : {}
+    } catch (e) {
+      req.body = {}
+    }
+
+    return next()
+  })
+})
+
 // ===== Middlewares básicos =====
-app.use(express.json({ limit: '2mb' }))
+app.use((req, res, next) => {
+  if (isWebhookPath(req)) return next()
+  return express.json({ limit: '2mb' })(req, res, next)
+})
 app.use(cookieParser())
 
 // ===== CORS (permite header x-client-id + preflight) =====
@@ -37,6 +72,8 @@ function isReqLocalhost(req) {
 
 // ===== DEV fallback client_id (apenas localhost) =====
 app.use((req, res, next) => {
+  if (isWebhookPath(req)) return next()
+
   const h = req.headers['x-client-id']
   const isLocalhost = isReqLocalhost(req)
 
@@ -50,6 +87,8 @@ app.use((req, res, next) => {
 
 // ===== Normaliza clientId no req + valida =====
 app.use((req, res, next) => {
+  if (isWebhookPath(req)) return next()
+
   const raw = req.headers['x-client-id']
   const isLocalhost = isReqLocalhost(req)
 
@@ -82,10 +121,11 @@ app.use((req, res, next) => {
   next()
 })
 
-// ✅ LOG simples (debug) — ajuda ver o erro do /flow no terminal
+// ✅ LOG simples (debug)
 app.use((req, res, next) => {
+  const isWebhook = isWebhookPath(req)
   const clientId = req.headers['x-client-id']
-  console.log(`[API] ${req.method} ${req.originalUrl} x-client-id=${clientId ?? '-'}`)
+  console.log(`[API] ${req.method} ${req.originalUrl} webhook=${isWebhook ? 'yes' : 'no'} x-client-id=${clientId ?? '-'}`)
   next()
 })
 
@@ -143,7 +183,6 @@ app.use((err, req, res, next) => {
 
 // ===== Start =====
 async function start() {
-  // ✅ testa conexão ao subir (log seguro)
   await testDbConnection()
 
   const port = Number(process.env.PORT || 3000)
